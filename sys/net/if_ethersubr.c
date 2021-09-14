@@ -97,8 +97,6 @@ CTASSERT(sizeof (struct ether_addr) == ETHER_ADDR_LEN);
 
 VNET_DEFINE(struct pfil_head, link_pfil_hook);	/* Packet filter hooks */
 
-SYSCTL_DECL(_net_link);
-
 /* netgraph node hooks for ng_ether(4) */
 void	(*ng_ether_input_p)(struct ifnet *ifp, struct mbuf **mp);
 void	(*ng_ether_input_orphan_p)(struct ifnet *ifp, struct mbuf *m);
@@ -729,9 +727,6 @@ vnet_ether_init(__unused void *arg)
 	if ((i = pfil_head_register(&V_link_pfil_hook)) != 0)
 		printf("%s: WARNING: unable to register pfil link hook, "
 			"error %d\n", __func__, i);
-	else
-                pfil_head_export_sysctl(&V_link_pfil_hook,
-                        SYSCTL_STATIC_CHILDREN(_net_link));
 #ifdef VIMAGE
 	netisr_register_vnet(&ether_nh);
 #endif
@@ -767,7 +762,7 @@ VNET_SYSUNINIT(vnet_ether_uninit, SI_SUB_PROTO_IF, SI_ORDER_ANY,
 static void
 ether_input(struct ifnet *ifp, struct mbuf *m)
 {
-
+	struct net_epoch_enter_cond neec;
 	struct mbuf *mn;
 
 	/*
@@ -775,6 +770,8 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 	 * m_nextpkt. We split them up into separate packets here and pass
 	 * them up. This allows the drivers to amortize the receive lock.
 	 */
+	CURVNET_SET_QUIET(ifp->if_vnet);
+	NET_EPOCH_ENTER_COND(&neec);
 	while (m) {
 		mn = m->m_nextpkt;
 		m->m_nextpkt = NULL;
@@ -785,11 +782,11 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		 */
 		KASSERT(m->m_pkthdr.rcvif == ifp, ("%s: ifnet mismatch m %p "
 		    "rcvif %p ifp %p", __func__, m, m->m_pkthdr.rcvif, ifp));
-		CURVNET_SET_QUIET(ifp->if_vnet);
 		netisr_dispatch(NETISR_ETHER, m);
-		CURVNET_RESTORE();
 		m = mn;
 	}
+	NET_EPOCH_EXIT_COND(&neec);
+	CURVNET_RESTORE();
 }
 
 /*
@@ -1016,6 +1013,7 @@ ether_reassign(struct ifnet *ifp, struct vnet *new_vnet, char *unused __unused)
 }
 #endif
 
+SYSCTL_DECL(_net_link);
 SYSCTL_NODE(_net_link, IFT_ETHER, ether, CTLFLAG_RW, 0, "Ethernet");
 
 #if 0
@@ -1405,6 +1403,11 @@ ether_gen_addr(struct ifnet *ifp, struct ether_addr *hwaddr)
 	char jailname[MAXHOSTNAMELEN];
 
 	getcredhostuuid(curthread->td_ucred, uuid, sizeof(uuid));
+	if (strncmp(uuid, DEFAULT_HOSTUUID, sizeof(uuid)) == 0) {
+		/* Fall back to a random mac address. */
+		goto rando;
+	}
+
 	/* If each (vnet) jail would also have a unique hostuuid this would not
 	 * be necessary. */
 	getjailname(curthread->td_ucred, jailname, sizeof(jailname));
@@ -1412,9 +1415,7 @@ ether_gen_addr(struct ifnet *ifp, struct ether_addr *hwaddr)
 	    jailname);
 	if (sz < 0) {
 		/* Fall back to a random mac address. */
-		arc4rand(hwaddr, sizeof(*hwaddr), 0);
-		hwaddr->octet[0] = 0x02;
-		return;
+		goto rando;
 	}
 
 	SHA1Init(&ctx);
@@ -1429,6 +1430,14 @@ ether_gen_addr(struct ifnet *ifp, struct ether_addr *hwaddr)
 		hwaddr->octet[i] = addr >> ((ETHER_ADDR_LEN - i - 1) * 8) &
 		    0xFF;
 	}
+
+	return;
+rando:
+	arc4rand(hwaddr, sizeof(*hwaddr), 0);
+	/* Unicast */
+	hwaddr->octet[0] &= 0xFE;
+	/* Locally administered. */
+	hwaddr->octet[0] |= 0x02;
 }
 
 DECLARE_MODULE(ether, ether_mod, SI_SUB_INIT_IF, SI_ORDER_ANY);

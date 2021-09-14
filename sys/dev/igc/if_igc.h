@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2016 Nicole Graziano <nicole@nextbsd.org>
- * Copyright (c) 2020 Rubicon Communications, LLC (Netgate)
  * All rights reserved.
+ * Copyright (c) 2021 Rubicon Communications, LLC (Netgate)
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,12 +25,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * $FreeBSD$
  */
 
-/*$FreeBSD$*/
 #include "opt_ddb.h"
 #include "opt_inet.h"
 #include "opt_inet6.h"
+#include "opt_rss.h"
 
 #ifdef HAVE_KERNEL_OPTION_HEADERS
 #include "opt_device_polling.h"
@@ -98,8 +100,7 @@
 
 /*
  * IGC_MAX_TXD: Maximum number of Transmit Descriptors
- * Valid Range: 80-256 for 82542 and 82543-based adapters
- *              80-4096 for others
+ * Valid Range: 128-4096
  * Default Value: 1024
  *   This value is the number of transmit descriptors allocated by the driver.
  *   Increasing this value allows the driver to queue more transmits. Each
@@ -116,8 +117,7 @@
 
 /*
  * IGC_MAX_RXD - Maximum number of receive Descriptors
- * Valid Range: 80-256 for 82542 and 82543-based adapters
- *              80-4096 for others
+ * Valid Range: 128-4096
  * Default Value: 1024
  *   This value is the number of receive descriptors allocated by the driver.
  *   Increasing this value allows the driver to buffer more incoming packets.
@@ -129,7 +129,7 @@
  */
 #define IGC_MIN_RXD		128
 #define IGC_MAX_RXD		4096
-#define IGC_DEFAULT_RXD          1024
+#define IGC_DEFAULT_RXD		1024
 #define IGC_DEFAULT_MULTI_RXD	4096
 #define IGC_MAX_RXD		4096
 
@@ -143,11 +143,10 @@
  *   system is reporting dropped transmits, this value may be set too high
  *   causing the driver to run out of available transmit descriptors.
  */
-#define IGC_TIDV_VAL                         64
+#define IGC_TIDV_VAL		64
 
 /*
  * IGC_TADV_VAL - Transmit Absolute Interrupt Delay Value
- * (Not valid for 82542/82543/82544)
  * Valid Range: 0-65535 (0=off)
  * Default Value: 64
  *   This value, in units of 1.024 microseconds, limits the delay in which a
@@ -157,7 +156,7 @@
  *   along with IGC_TIDV_VAL, may improve traffic throughput in specific
  *   network conditions.
  */
-#define IGC_TADV_VAL                         64
+#define IGC_TADV_VAL		64
 
 /*
  * IGC_RDTR_VAL - Receive Interrupt Delay Timer (Packet Timer)
@@ -178,10 +177,10 @@
  *            restoring the network connection. To eliminate the potential
  *            for the hang ensure that IGC_RDTR is set to 0.
  */
-#define IGC_RDTR_VAL                         0
+#define IGC_RDTR_VAL		0
 
 /*
- * Receive Interrupt Absolute Delay Timer (Not valid for 82542/82543/82544)
+ * Receive Interrupt Absolute Delay Timer
  * Valid Range: 0-65535 (0=off)
  * Default Value: 64
  *   This value, in units of 1.024 microseconds, limits the delay in which a
@@ -191,22 +190,14 @@
  *   along with IGC_RDTR, may improve traffic throughput in specific network
  *   conditions.
  */
-#define IGC_RADV_VAL                         64
+#define IGC_RADV_VAL		64
 
 /*
  * This parameter controls whether or not autonegotation is enabled.
  *              0 - Disable autonegotiation
  *              1 - Enable  autonegotiation
  */
-#define DO_AUTO_NEG                     1
-
-/*
- * This parameter control whether or not the driver will wait for
- * autonegotiation to complete.
- *              1 - Wait for autonegotiation to complete
- *              0 - Don't wait for autonegotiation to complete
- */
-#define WAIT_FOR_AUTO_NEG_DEFAULT       0
+#define DO_AUTO_NEG		true
 
 /* Tunables -- End */
 
@@ -216,61 +207,15 @@
 
 #define AUTO_ALL_MODES		0
 
-/* PHY master/slave setting */
-#define IGC_MASTER_SLAVE		igc_ms_hw_default
-
 /*
  * Micellaneous constants
  */
-#define IGC_VENDOR_ID                    0x8086
-#define IGC_FLASH                        0x0014 
-
-#define IGC_JUMBO_PBA                    0x00000028
-#define IGC_DEFAULT_PBA                  0x00000030
-#define IGC_SMARTSPEED_DOWNSHIFT         3
-#define IGC_SMARTSPEED_MAX               15
-#define IGC_MAX_LOOP			10
-
 #define MAX_NUM_MULTICAST_ADDRESSES     128
-#define PCI_ANY_ID                      (~0U)
-#define ETHER_ALIGN                     2
 #define IGC_FC_PAUSE_TIME		0x0680
-#define IGC_EEPROM_APME			0x400;
-#define IGC_82544_APME			0x0004;
-
-
-/* Support AutoMediaDetect for Marvell M88 PHY in i354 */
-#define IGC_MEDIA_RESET			(1 << 0)
-
-/* Define the starting Interrupt rate per Queue */
-#define IGC_INTS_PER_SEC        8000
-#define IGC_DEFAULT_ITR         ((1000000/IGC_INTS_PER_SEC) << 2)
-
-#define IGC_LINK_ITR            2000
-#define I210_LINK_DELAY		1000
 
 #define IGC_TXPBSIZE		20408
-#define IGC_HDR_BUF		128
 #define IGC_PKTTYPE_MASK	0x0000FFF0
 #define IGC_DMCTLX_DCFLUSH_DIS	0x80000000  /* Disable DMA Coalesce Flush */
-
-/*
- * Driver state logic for the detection of a hung state
- * in hardware.  Set TX_HUNG whenever a TX packet is used
- * (data is sent) and clear it when txeof() is invoked if
- * any descriptors from the ring are cleaned/reclaimed.
- * Increment internal counter if no descriptors are cleaned
- * and compare to TX_MAXTRIES.  When counter > TX_MAXTRIES,
- * reset adapter.
- */
-#define IGC_TX_IDLE			0x00000000
-#define IGC_TX_BUSY			0x00000001
-#define IGC_TX_HUNG			0x80000000
-#define IGC_TX_MAXTRIES			10
-
-#define PCICFG_DESC_RING_STATUS		0xe4
-#define FLUSH_DESC_REQUIRED		0x100
-
 
 #define IGC_RX_PTHRESH			8
 #define IGC_RX_HTHRESH			8
@@ -278,7 +223,6 @@
 
 #define IGC_TX_PTHRESH			8
 #define IGC_TX_HTHRESH			1
-#define IGC_TX_WTHRESH			(adapter->intr_type == IFLIB_INTR_MSIX) ? 1 : 16)
 
 /*
  * TDBA/RDBA should be aligned on 16 byte boundary. But TDLEN/RDLEN should be
@@ -287,27 +231,7 @@
  */
 #define IGC_DBA_ALIGN			128
 
-/*
- * See Intel 82574 Driver Programming Interface Manual, Section 10.2.6.9
- */
-#define TARC_COMPENSATION_MODE	(1 << 7)	/* Compensation Mode */
-#define TARC_SPEED_MODE_BIT 	(1 << 21)	/* On PCI-E MACs only */
-#define TARC_MQ_FIX		(1 << 23) | \
-				(1 << 24) | \
-				(1 << 25)	/* Handle errata in MQ mode */
-#define TARC_ERRATA_BIT 	(1 << 26)	/* Note from errata on 82574 */
-
-/* PCI Config defines */
-#define IGC_BAR_TYPE(v)		((v) & IGC_BAR_TYPE_MASK)
-#define IGC_BAR_TYPE_MASK	0x00000001
-#define IGC_BAR_TYPE_MMEM	0x00000000
-#define IGC_BAR_TYPE_IO		0x00000001
-#define IGC_BAR_TYPE_FLASH	0x0014 
-#define IGC_BAR_MEM_TYPE(v)	((v) & IGC_BAR_MEM_TYPE_MASK)
-#define IGC_BAR_MEM_TYPE_MASK	0x00000006
-#define IGC_BAR_MEM_TYPE_32BIT	0x00000000
-#define IGC_BAR_MEM_TYPE_64BIT	0x00000004
-#define IGC_MSIX_BAR		3	/* On 82575 */
+#define IGC_MSIX_BAR			3
 
 /* Defines for printing debug information */
 #define DEBUG_INIT  0
@@ -324,29 +248,13 @@
 #define HW_DEBUGOUT1(S, A)          if (DEBUG_HW) printf(S "\n", A)
 #define HW_DEBUGOUT2(S, A, B)       if (DEBUG_HW) printf(S "\n", A, B)
 
-#define IGC_MAX_SCATTER		40
-#define IGC_VFTA_SIZE		128
-#define IGC_TSO_SIZE		65535
+#define IGC_MAX_SCATTER			40
+#define IGC_VFTA_SIZE			128
+#define IGC_TSO_SIZE			65535
 #define IGC_TSO_SEG_SIZE		4096	/* Max dma segment size */
-#define IGC_MSIX_MASK		0x01F00000 /* For 82574 use */
-#define IGC_MSIX_LINK		0x01000000 /* For 82574 use */
-#define ETH_ZLEN		60
 #define IGC_CSUM_OFFLOAD	(CSUM_IP | CSUM_IP_UDP | CSUM_IP_TCP | \
 				 CSUM_IP_SCTP | CSUM_IP6_UDP | CSUM_IP6_TCP | \
 				 CSUM_IP6_SCTP)	/* Offload bits in mbuf flag */
-
-
-#define IGC_PKTTYPE_MASK	0x0000FFF0
-#define IGC_DMCTLX_DCFLUSH_DIS	0x80000000  /* Disable DMA Coalesce Flush */
-
-/*
- * 82574 only reports 3 MSI-X vectors by default;
- * defines assisting with making it report 5 are
- * located here.
- */
-#define IGC_NVM_PCIE_CTRL	0x1B
-#define IGC_NVM_MSIX_N_MASK	(0x7 << IGC_NVM_MSIX_N_SHIFT)
-#define IGC_NVM_MSIX_N_SHIFT	7
 
 struct igc_adapter;
 
@@ -362,9 +270,8 @@ struct igc_int_delay_info {
 struct tx_ring {
         struct igc_adapter	*adapter;
 	struct igc_tx_desc	*tx_base;
-	uint64_t                tx_paddr; 
+	uint64_t                tx_paddr;
 	qidx_t			*tx_rsq;
-	bool			tx_tso;		/* last tx was tso */
 	uint8_t			me;
 	qidx_t			tx_rs_cidx;
 	qidx_t			tx_rs_pidx;
@@ -396,12 +303,11 @@ struct rx_ring {
         u32                     me;
         u32                     payload;
         union igc_rx_desc_extended	*rx_base;
-        uint64_t                rx_paddr; 
+        uint64_t                rx_paddr;
 
         /* Interrupt resources */
         void                    *tag;
         struct resource         *res;
-	bool			discard;
 
         /* Soft stats */
         unsigned long		rx_irq;
@@ -425,8 +331,8 @@ struct igc_rx_queue {
 	u32                    eims;
 	struct rx_ring         rxr;
 	u64                    irqs;
-	struct if_irq          que_irq; 
-};  
+	struct if_irq          que_irq;
+};
 
 /* Our adapter structure */
 struct igc_adapter {
@@ -444,7 +350,7 @@ struct igc_adapter {
 	struct cdev	*led_dev;
 
         struct igc_tx_queue *tx_queues;
-        struct igc_rx_queue *rx_queues; 
+        struct igc_rx_queue *rx_queues;
         struct if_irq   irq;
 
 	struct resource *memory;
@@ -461,7 +367,6 @@ struct igc_adapter {
 	int		if_flags;
 	int		igc_insert_vlan_header;
 	u32		ims;
-	bool		in_detach;
 
 	u32		flags;
 	/* Task for FAST handling */
@@ -470,14 +375,12 @@ struct igc_adapter {
 	u16	        num_vlans;
         u32		txd_cmd;
 
-        u32             tx_process_limit; 
+        u32             tx_process_limit;
         u32             rx_process_limit;
 	u32		rx_mbuf_sz;
 
 	/* Management and WOL features */
 	u32		wol;
-	bool		has_manage;
-	bool		has_amt;
 
 	/* Multicast array memory */
 	u8		*mta;
@@ -516,21 +419,6 @@ struct igc_adapter {
 	struct igc_hw_stats stats;
 	u16		vf_ifp;
 };
-
-/********************************************************************************
- * vendor_info_array
- *
- * This array contains the list of Subvendor/Subdevice IDs on which the driver
- * should load.
- *
- ********************************************************************************/
-typedef struct _igc_vendor_info_t {
-	unsigned int vendor_id;
-	unsigned int device_id;
-	unsigned int subvendor_id;
-	unsigned int subdevice_id;
-	unsigned int index;
-} igc_vendor_info_t;
 
 void igc_dump_rs(struct igc_adapter *);
 

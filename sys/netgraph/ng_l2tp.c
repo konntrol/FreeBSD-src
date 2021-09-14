@@ -1470,9 +1470,10 @@ ng_l2tp_seq_rack_timeout(node_p node, hook_p hook, void *arg1, int arg2)
 		return;
 	}
 
-	if (seq->xwin[0] == NULL)
-		printf("empty transmit queue: ns %u rack %u active %d",
-		    seq->ns, seq->rack, callout_active(&seq->rack_timer));
+	if (seq->xwin[0] == NULL) {
+		mtx_unlock(&seq->mtx);
+		return;
+	}
 
 	priv->stats.xmitRetransmits++;
 

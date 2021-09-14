@@ -1,36 +1,11 @@
-/******************************************************************************
-  SPDX-License-Identifier: BSD-3-Clause
+/*-
+ * Copyright 2021 Intel Corp
+ * Copyright 2021 Rubicon Communications, LLC (Netgate)
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
-  Copyright (c) 2020 Rubicon Communications, LLC (Netgate)
-  All rights reserved.
-  
-  Redistribution and use in source and binary forms, with or without 
-  modification, are permitted provided that the following conditions are met:
-  
-   1. Redistributions of source code must retain the above copyright notice, 
-      this list of conditions and the following disclaimer.
-  
-   2. Redistributions in binary form must reproduce the above copyright 
-      notice, this list of conditions and the following disclaimer in the 
-      documentation and/or other materials provided with the distribution.
-  
-   3. Neither the name of Rubicon Communications nor the names of its
-      contributors may be used to endorse or promote products derived from 
-      this software without specific prior written permission.
-  
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-  POSSIBILITY OF SUCH DAMAGE.
-
-******************************************************************************/
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
 
 #include "igc_api.h"
 
@@ -157,7 +132,7 @@ s32 igc_set_mac_type(struct igc_hw *hw)
 /**
  *  igc_setup_init_funcs - Initializes function pointers
  *  @hw: pointer to the HW structure
- *  @init_device: TRUE will initialize the rest of the function pointers
+ *  @init_device: true will initialize the rest of the function pointers
  *		  getting the device ready for use.  FALSE will only set
  *		  MAC type and the function pointers for the other init
  *		  functions.  Passing FALSE will not generate any hardware
@@ -583,7 +558,7 @@ s32 igc_phy_commit(struct igc_hw *hw)
  *  Success returns 0, Failure returns 1
  *
  *  The low power link up (lplu) state is set to the power management level D0
- *  and SmartSpeed is disabled when active is TRUE, else clear lplu for D0
+ *  and SmartSpeed is disabled when active is true, else clear lplu for D0
  *  and enable Smartspeed.  LPLU and Smartspeed are mutually exclusive.  LPLU
  *  is used during Dx states where the power conservation is most important.
  *  During driver activity, SmartSpeed should be enabled so performance is
@@ -605,7 +580,7 @@ s32 igc_set_d0_lplu_state(struct igc_hw *hw, bool active)
  *  Success returns 0, Failure returns 1
  *
  *  The low power link up (lplu) state is set to the power management level D3
- *  and SmartSpeed is disabled when active is TRUE, else clear lplu for D3
+ *  and SmartSpeed is disabled when active is true, else clear lplu for D3
  *  and enable Smartspeed.  LPLU and Smartspeed are mutually exclusive.  LPLU
  *  is used during Dx states where the power conservation is most important.
  *  During driver activity, SmartSpeed should be enabled so performance is

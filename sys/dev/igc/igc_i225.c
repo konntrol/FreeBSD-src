@@ -1,36 +1,11 @@
-/******************************************************************************
-  SPDX-License-Identifier: BSD-3-Clause
+/*-
+ * Copyright 2021 Intel Corp
+ * Copyright 2021 Rubicon Communications, LLC (Netgate)
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
-  Copyright (c) 2020 Rubicon Communications, LLC (Netgate)
-  All rights reserved.
-  
-  Redistribution and use in source and binary forms, with or without 
-  modification, are permitted provided that the following conditions are met:
-  
-   1. Redistributions of source code must retain the above copyright notice, 
-      this list of conditions and the following disclaimer.
-  
-   2. Redistributions in binary form must reproduce the above copyright 
-      notice, this list of conditions and the following disclaimer in the 
-      documentation and/or other materials provided with the distribution.
-  
-   3. Neither the name of Rubicon Communications nor the names of its
-      contributors may be used to endorse or promote products derived from 
-      this software without specific prior written permission.
-  
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-  POSSIBILITY OF SUCH DAMAGE.
-
-******************************************************************************/
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
 
 #include "igc_api.h"
 
@@ -139,11 +114,11 @@ static s32 igc_init_mac_params_i225(struct igc_hw *hw)
 	mac->ops.release_swfw_sync = igc_release_swfw_sync_i225;
 
 	/* Allow a single clear of the SW semaphore on I225 */
-	dev_spec->clear_semaphore_once = TRUE;
+	dev_spec->clear_semaphore_once = true;
 	mac->ops.setup_physical_interface = igc_setup_copper_link_i225;
 
 	/* Set if part includes ASF firmware */
-	mac->asf_firmware_present = TRUE;
+	mac->asf_firmware_present = true;
 
 	/* multicast address update */
 	mac->ops.update_mc_addr_list = igc_update_mc_addr_list_generic;
@@ -434,7 +409,7 @@ static s32 igc_get_hw_semaphore_i225(struct igc_hw *hw)
 		 * unintentionally. Clear the semaphore once before giving up.
 		 */
 		if (hw->dev_spec._i225.clear_semaphore_once) {
-			hw->dev_spec._i225.clear_semaphore_once = FALSE;
+			hw->dev_spec._i225.clear_semaphore_once = false;
 			igc_put_hw_semaphore_generic(hw);
 			for (i = 0; i < timeout; i++) {
 				swsm = IGC_READ_REG(hw, IGC_SWSM);
@@ -716,14 +691,14 @@ out:
 bool igc_get_flash_presence_i225(struct igc_hw *hw)
 {
 	u32 eec = 0;
-	bool ret_val = FALSE;
+	bool ret_val = false;
 
 	DEBUGFUNC("igc_get_flash_presence_i225");
 
 	eec = IGC_READ_REG(hw, IGC_EECD);
 
 	if (eec & IGC_EECD_FLASH_DETECTED_I225)
-		ret_val = TRUE;
+		ret_val = true;
 
 	return ret_val;
 }
@@ -1032,7 +1007,7 @@ s32 igc_check_for_link_i225(struct igc_hw *hw)
 {
 	struct igc_mac_info *mac = &hw->mac;
 	s32 ret_val;
-	bool link = FALSE;
+	bool link = false;
 
 	DEBUGFUNC("igc_check_for_link_i225");
 
@@ -1068,7 +1043,7 @@ s32 igc_check_for_link_i225(struct igc_hw *hw)
 	if (!link)
 		goto out; /* No link detected */
 
-	mac->get_link_status = FALSE;
+	mac->get_link_status = false;
 
 	/* Check if there was DownShift, must be checked
 	 * immediately after link-up
@@ -1137,7 +1112,7 @@ s32 igc_init_hw_i225(struct igc_hw *hw)
 /*
  * igc_set_d0_lplu_state_i225 - Set Low-Power-Link-Up (LPLU) D0 state
  * @hw: pointer to the HW structure
- * @active: TRUE to enable LPLU, FALSE to disable
+ * @active: true to enable LPLU, false to disable
  *
  * Note: since I225 does not actually support LPLU, this function
  * simply enables/disables 1G and 2.5G speeds in D0.
@@ -1165,7 +1140,7 @@ s32 igc_set_d0_lplu_state_i225(struct igc_hw *hw, bool active)
 /*
  * igc_set_d3_lplu_state_i225 - Set Low-Power-Link-Up (LPLU) D3 state
  * @hw: pointer to the HW structure
- * @active: TRUE to enable LPLU, FALSE to disable
+ * @active: true to enable LPLU, false to disable
  *
  * Note: since I225 does not actually support LPLU, this function
  * simply enables/disables 100M, 1G and 2.5G speeds in D3.

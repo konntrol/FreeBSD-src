@@ -1,36 +1,10 @@
-/******************************************************************************
-  SPDX-License-Identifier: BSD-3-Clause
-
-  Copyright (c) 2020 Rubicon Communications, LLC (Netgate)
-  All rights reserved.
-  
-  Redistribution and use in source and binary forms, with or without 
-  modification, are permitted provided that the following conditions are met:
-  
-   1. Redistributions of source code must retain the above copyright notice, 
-      this list of conditions and the following disclaimer.
-  
-   2. Redistributions in binary form must reproduce the above copyright 
-      notice, this list of conditions and the following disclaimer in the 
-      documentation and/or other materials provided with the distribution.
-  
-   3. Neither the name of Rubicon Communications nor the names of its
-      contributors may be used to endorse or promote products derived from 
-      this software without specific prior written permission.
-  
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-  POSSIBILITY OF SUCH DAMAGE.
-
-******************************************************************************/
+/*-
+ * Copyright 2021 Intel Corp
+ * Copyright 2021 Rubicon Communications, LLC (Netgate)
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * $FreeBSD$
+ */
 
 #ifndef _IGC_DEFINES_H_
 #define _IGC_DEFINES_H_
@@ -369,7 +343,7 @@
 #define IGC_RXCSUM_TUOFL	0x00000200 /* TCP / UDP checksum offload */
 #define IGC_RXCSUM_CRCOFL	0x00000800 /* CRC32 offload enable */
 #define IGC_RXCSUM_IPPCSE	0x00001000 /* IP payload checksum enable */
-#define IGC_RXCSUM_PCSD	0x00002000 /* packet checksum disabled */
+#define IGC_RXCSUM_PCSD		0x00002000 /* packet checksum disabled */
 
 /* GPY211 - I225 defines */
 #define GPY_MMD_MASK		0xFFFF0000
@@ -379,16 +353,16 @@
 #define IGC_RFCTL_NFSW_DIS		0x00000040
 #define IGC_RFCTL_NFSR_DIS		0x00000080
 #define IGC_RFCTL_ACK_DIS		0x00001000
-#define IGC_RFCTL_EXTEN		0x00008000
+#define IGC_RFCTL_EXTEN			0x00008000
 #define IGC_RFCTL_IPV6_EX_DIS		0x00010000
 #define IGC_RFCTL_NEW_IPV6_EXT_DIS	0x00020000
 #define IGC_RFCTL_LEF			0x00040000
 
 /* Collision related configuration parameters */
 #define IGC_CT_SHIFT			4
-#define IGC_COLLISION_THRESHOLD	15
-#define IGC_COLLISION_DISTANCE	63
-#define IGC_COLD_SHIFT		12
+#define IGC_COLLISION_THRESHOLD		15
+#define IGC_COLLISION_DISTANCE		63
+#define IGC_COLD_SHIFT			12
 
 /* Default values for the transmit IPG register */
 #define DEFAULT_82543_TIPG_IPGT_FIBER	9
@@ -407,16 +381,14 @@
 #define ETHERNET_IEEE_VLAN_TYPE		0x8100  /* 802.3ac packet */
 
 #define ETHERNET_FCS_SIZE		4
-#define MAX_JUMBO_FRAME_SIZE		0x3F00
-/* The datasheet maximum supported RX size is 9.5KB (9728 bytes) */
-#define MAX_RX_JUMBO_FRAME_SIZE		0x2600
-#define IGC_TX_PTR_GAP		0x1F
+#define MAX_JUMBO_FRAME_SIZE		MJUM9BYTES
+#define IGC_TX_PTR_GAP			0x1F
 
 /* Extended Configuration Control and Size */
 #define IGC_EXTCNF_CTRL_MDIO_SW_OWNERSHIP	0x00000020
 #define IGC_EXTCNF_CTRL_LCD_WRITE_ENABLE	0x00000001
 #define IGC_EXTCNF_CTRL_OEM_WRITE_ENABLE	0x00000008
-#define IGC_EXTCNF_CTRL_SWFLAG		0x00000020
+#define IGC_EXTCNF_CTRL_SWFLAG			0x00000020
 #define IGC_EXTCNF_CTRL_GATE_PHY_CFG		0x00000080
 #define IGC_EXTCNF_SIZE_EXT_PCIE_LENGTH_MASK	0x00FF0000
 #define IGC_EXTCNF_SIZE_EXT_PCIE_LENGTH_SHIFT	16
@@ -425,7 +397,7 @@
 
 #define IGC_PHY_CTRL_D0A_LPLU			0x00000002
 #define IGC_PHY_CTRL_NOND0A_LPLU		0x00000004
-#define IGC_PHY_CTRL_NOND0A_GBE_DISABLE	0x00000008
+#define IGC_PHY_CTRL_NOND0A_GBE_DISABLE		0x00000008
 #define IGC_PHY_CTRL_GBE_DISABLE		0x00000040
 
 #define IGC_KABGTXD_BGSQLBIAS			0x00050000
@@ -455,10 +427,10 @@
 #define IGC_PBS_16K		IGC_PBA_16K
 
 /* Uncorrectable/correctable ECC Error counts and enable bits */
-#define IGC_PBECCSTS_CORR_ERR_CNT_MASK	0x000000FF
+#define IGC_PBECCSTS_CORR_ERR_CNT_MASK		0x000000FF
 #define IGC_PBECCSTS_UNCORR_ERR_CNT_MASK	0x0000FF00
 #define IGC_PBECCSTS_UNCORR_ERR_CNT_SHIFT	8
-#define IGC_PBECCSTS_ECC_ENABLE		0x00010000
+#define IGC_PBECCSTS_ECC_ENABLE			0x00010000
 
 #define IFS_MAX			80
 #define IFS_MIN			40
@@ -471,22 +443,22 @@
 #define IGC_SWSM_SWESMBI	0x00000002 /* FW Semaphore bit */
 #define IGC_SWSM_DRV_LOAD	0x00000008 /* Driver Loaded Bit */
 
-#define IGC_SWSM2_LOCK	0x00000002 /* Secondary driver semaphore bit */
+#define IGC_SWSM2_LOCK		0x00000002 /* Secondary driver semaphore bit */
 
 /* Interrupt Cause Read */
 #define IGC_ICR_TXDW		0x00000001 /* Transmit desc written back */
 #define IGC_ICR_TXQE		0x00000002 /* Transmit Queue empty */
 #define IGC_ICR_LSC		0x00000004 /* Link Status Change */
 #define IGC_ICR_RXSEQ		0x00000008 /* Rx sequence error */
-#define IGC_ICR_RXDMT0	0x00000010 /* Rx desc min. threshold (0) */
+#define IGC_ICR_RXDMT0		0x00000010 /* Rx desc min. threshold (0) */
 #define IGC_ICR_RXO		0x00000040 /* Rx overrun */
 #define IGC_ICR_RXT0		0x00000080 /* Rx timer intr (ring 0) */
 #define IGC_ICR_RXCFG		0x00000400 /* Rx /c/ ordered set */
-#define IGC_ICR_GPI_EN0	0x00000800 /* GP Int 0 */
-#define IGC_ICR_GPI_EN1	0x00001000 /* GP Int 1 */
-#define IGC_ICR_GPI_EN2	0x00002000 /* GP Int 2 */
-#define IGC_ICR_GPI_EN3	0x00004000 /* GP Int 3 */
-#define IGC_ICR_TXD_LOW	0x00008000
+#define IGC_ICR_GPI_EN0		0x00000800 /* GP Int 0 */
+#define IGC_ICR_GPI_EN1		0x00001000 /* GP Int 1 */
+#define IGC_ICR_GPI_EN2		0x00002000 /* GP Int 2 */
+#define IGC_ICR_GPI_EN3		0x00004000 /* GP Int 3 */
+#define IGC_ICR_TXD_LOW		0x00008000
 #define IGC_ICR_ECCER		0x00400000 /* Uncorrectable ECC Error */
 #define IGC_ICR_TS		0x00080000 /* Time Sync Interrupt */
 #define IGC_ICR_DRSTA		0x40000000 /* Device Reset Asserted */
@@ -507,12 +479,12 @@
 #define IGC_EICR_TX_QUEUE2	0x00000400 /* Tx Queue 2 Interrupt */
 #define IGC_EICR_TX_QUEUE3	0x00000800 /* Tx Queue 3 Interrupt */
 #define IGC_EICR_TCP_TIMER	0x40000000 /* TCP Timer */
-#define IGC_EICR_OTHER	0x80000000 /* Interrupt Cause Active */
+#define IGC_EICR_OTHER		0x80000000 /* Interrupt Cause Active */
 /* TCP Timer */
-#define IGC_TCPTIMER_KS	0x00000100 /* KickStart */
+#define IGC_TCPTIMER_KS			0x00000100 /* KickStart */
 #define IGC_TCPTIMER_COUNT_ENABLE	0x00000200 /* Count Enable */
 #define IGC_TCPTIMER_COUNT_FINISH	0x00000400 /* Count finish */
-#define IGC_TCPTIMER_LOOP	0x00000800 /* Loop */
+#define IGC_TCPTIMER_LOOP		0x00000800 /* Loop */
 
 /* This defines the bits that are set in the Interrupt Mask
  * Set/Read Register.  Each bit is documented below:
@@ -533,12 +505,12 @@
 #define IGC_IMS_TXDW		IGC_ICR_TXDW    /* Tx desc written back */
 #define IGC_IMS_LSC		IGC_ICR_LSC     /* Link Status Change */
 #define IGC_IMS_RXSEQ		IGC_ICR_RXSEQ   /* Rx sequence error */
-#define IGC_IMS_RXDMT0	IGC_ICR_RXDMT0  /* Rx desc min. threshold */
+#define IGC_IMS_RXDMT0		IGC_ICR_RXDMT0  /* Rx desc min. threshold */
 #define IGC_QVECTOR_MASK	0x7FFC		/* Q-vector mask */
 #define IGC_ITR_VAL_MASK	0x04		/* ITR value mask */
 #define IGC_IMS_RXO		IGC_ICR_RXO     /* Rx overrun */
 #define IGC_IMS_RXT0		IGC_ICR_RXT0    /* Rx timer intr */
-#define IGC_IMS_TXD_LOW	IGC_ICR_TXD_LOW
+#define IGC_IMS_TXD_LOW		IGC_ICR_TXD_LOW
 #define IGC_IMS_ECCER		IGC_ICR_ECCER   /* Uncorrectable ECC Error */
 #define IGC_IMS_TS		IGC_ICR_TS      /* Time Sync Interrupt */
 #define IGC_IMS_DRSTA		IGC_ICR_DRSTA   /* Device Reset Asserted */
@@ -557,12 +529,12 @@
 #define IGC_EIMS_TX_QUEUE2	IGC_EICR_TX_QUEUE2 /* Tx Queue 2 Interrupt */
 #define IGC_EIMS_TX_QUEUE3	IGC_EICR_TX_QUEUE3 /* Tx Queue 3 Interrupt */
 #define IGC_EIMS_TCP_TIMER	IGC_EICR_TCP_TIMER /* TCP Timer */
-#define IGC_EIMS_OTHER	IGC_EICR_OTHER   /* Interrupt Cause Active */
+#define IGC_EIMS_OTHER		IGC_EICR_OTHER   /* Interrupt Cause Active */
 
 /* Interrupt Cause Set */
 #define IGC_ICS_LSC		IGC_ICR_LSC       /* Link Status Change */
 #define IGC_ICS_RXSEQ		IGC_ICR_RXSEQ     /* Rx sequence error */
-#define IGC_ICS_RXDMT0	IGC_ICR_RXDMT0    /* Rx desc min. threshold */
+#define IGC_ICS_RXDMT0		IGC_ICR_RXDMT0    /* Rx desc min. threshold */
 
 /* Extended Interrupt Cause Set */
 #define IGC_EICS_RX_QUEUE0	IGC_EICR_RX_QUEUE0 /* Rx Queue 0 Interrupt */
@@ -574,10 +546,10 @@
 #define IGC_EICS_TX_QUEUE2	IGC_EICR_TX_QUEUE2 /* Tx Queue 2 Interrupt */
 #define IGC_EICS_TX_QUEUE3	IGC_EICR_TX_QUEUE3 /* Tx Queue 3 Interrupt */
 #define IGC_EICS_TCP_TIMER	IGC_EICR_TCP_TIMER /* TCP Timer */
-#define IGC_EICS_OTHER	IGC_EICR_OTHER   /* Interrupt Cause Active */
+#define IGC_EICS_OTHER		IGC_EICR_OTHER   /* Interrupt Cause Active */
 
 #define IGC_EITR_ITR_INT_MASK	0x0000FFFF
-#define IGC_EITR_INTERVAL 0x00007FFC
+#define IGC_EITR_INTERVAL 	0x00007FFC
 /* IGC_EITR_CNT_IGNR is only for 82576 and newer */
 #define IGC_EITR_CNT_IGNR	0x80000000 /* Don't reset counters on write */
 
@@ -585,7 +557,7 @@
 #define IGC_TXDCTL_PTHRESH	0x0000003F /* TXDCTL Prefetch Threshold */
 #define IGC_TXDCTL_HTHRESH	0x00003F00 /* TXDCTL Host Threshold */
 #define IGC_TXDCTL_WTHRESH	0x003F0000 /* TXDCTL Writeback Threshold */
-#define IGC_TXDCTL_GRAN	0x01000000 /* TXDCTL Granularity */
+#define IGC_TXDCTL_GRAN		0x01000000 /* TXDCTL Granularity */
 #define IGC_TXDCTL_FULL_TX_DESC_WB	0x01010000 /* GRAN=1, WTHRESH=1 */
 #define IGC_TXDCTL_MAX_TX_DESC_PREFETCH 0x0100001F /* GRAN=1, PTHRESH=31 */
 /* Enable the counting of descriptors still to be processed. */
@@ -607,7 +579,7 @@
  * (RAR[15]) for our directed address used by controllers with
  * manageability enabled, allowing us room for 15 multicast addresses.
  */
-#define IGC_RAR_ENTRIES	15
+#define IGC_RAR_ENTRIES		15
 #define IGC_RAH_AV		0x80000000 /* Receive descriptor valid */
 #define IGC_RAL_MAC_ADDR_LEN	4
 #define IGC_RAH_MAC_ADDR_LEN	2
@@ -616,7 +588,7 @@
 #define IGC_SUCCESS			0
 #define IGC_ERR_NVM			1
 #define IGC_ERR_PHY			2
-#define IGC_ERR_CONFIG		3
+#define IGC_ERR_CONFIG			3
 #define IGC_ERR_PARAM			4
 #define IGC_ERR_MAC_INIT		5
 #define IGC_ERR_PHY_TYPE		6
@@ -629,7 +601,7 @@
 #define IGC_ERR_MBX			15
 #define IGC_ERR_INVALID_ARGUMENT	16
 #define IGC_ERR_NO_SPACE		17
-#define IGC_ERR_NVM_PBA_SECTION	18
+#define IGC_ERR_NVM_PBA_SECTION		18
 #define IGC_ERR_INVM_VALUE_NOT_FOUND	20
 
 /* Loop limit on how long we wait for auto-negotiation to complete */
@@ -647,11 +619,11 @@
 /* Flow Control */
 #define IGC_FCRTH_RTH		0x0000FFF8 /* Mask Bits[15:3] for RTH */
 #define IGC_FCRTL_RTL		0x0000FFF8 /* Mask Bits[15:3] for RTL */
-#define IGC_FCRTL_XONE	0x80000000 /* Enable XON frame transmission */
+#define IGC_FCRTL_XONE		0x80000000 /* Enable XON frame transmission */
 
 /* Transmit Configuration Word */
 #define IGC_TXCW_FD		0x00000020 /* TXCW full duplex */
-#define IGC_TXCW_PAUSE	0x00000080 /* TXCW sym pause request */
+#define IGC_TXCW_PAUSE		0x00000080 /* TXCW sym pause request */
 #define IGC_TXCW_ASM_DIR	0x00000100 /* TXCW astm pause direction */
 #define IGC_TXCW_PAUSE_MASK	0x00000180 /* TXCW pause request mask */
 #define IGC_TXCW_ANE		0x80000000 /* Auto-neg enable */
@@ -660,7 +632,7 @@
 #define IGC_RXCW_CW		0x0000ffff /* RxConfigWord mask */
 #define IGC_RXCW_IV		0x08000000 /* Receive config invalid */
 #define IGC_RXCW_C		0x20000000 /* Receive config */
-#define IGC_RXCW_SYNCH	0x40000000 /* Receive config synch */
+#define IGC_RXCW_SYNCH		0x40000000 /* Receive config synch */
 
 #define IGC_TSYNCTXCTL_TXTT_0	0x00000001 /* Tx timestamp reg 0 valid */
 #define IGC_TSYNCTXCTL_ENABLED	0x00000010 /* enable Tx timestamping */
@@ -670,31 +642,31 @@
 #define IGC_TSYNCRXCTL_TYPE_L2_V2	0x00
 #define IGC_TSYNCRXCTL_TYPE_L4_V1	0x02
 #define IGC_TSYNCRXCTL_TYPE_L2_L4_V2	0x04
-#define IGC_TSYNCRXCTL_TYPE_ALL	0x08
+#define IGC_TSYNCRXCTL_TYPE_ALL		0x08
 #define IGC_TSYNCRXCTL_TYPE_EVENT_V2	0x0A
-#define IGC_TSYNCRXCTL_ENABLED	0x00000010 /* enable Rx timestamping */
+#define IGC_TSYNCRXCTL_ENABLED		0x00000010 /* enable Rx timestamping */
 #define IGC_TSYNCRXCTL_SYSCFI		0x00000020 /* Sys clock frequency */
 
 #define IGC_TSYNCRXCFG_PTP_V1_CTRLT_MASK		0x000000FF
 #define IGC_TSYNCRXCFG_PTP_V1_SYNC_MESSAGE		0x00
-#define IGC_TSYNCRXCFG_PTP_V1_DELAY_REQ_MESSAGE	0x01
-#define IGC_TSYNCRXCFG_PTP_V1_FOLLOWUP_MESSAGE	0x02
+#define IGC_TSYNCRXCFG_PTP_V1_DELAY_REQ_MESSAGE		0x01
+#define IGC_TSYNCRXCFG_PTP_V1_FOLLOWUP_MESSAGE		0x02
 #define IGC_TSYNCRXCFG_PTP_V1_DELAY_RESP_MESSAGE	0x03
 #define IGC_TSYNCRXCFG_PTP_V1_MANAGEMENT_MESSAGE	0x04
 
 #define IGC_TSYNCRXCFG_PTP_V2_MSGID_MASK		0x00000F00
 #define IGC_TSYNCRXCFG_PTP_V2_SYNC_MESSAGE		0x0000
-#define IGC_TSYNCRXCFG_PTP_V2_DELAY_REQ_MESSAGE	0x0100
+#define IGC_TSYNCRXCFG_PTP_V2_DELAY_REQ_MESSAGE		0x0100
 #define IGC_TSYNCRXCFG_PTP_V2_PATH_DELAY_REQ_MESSAGE	0x0200
 #define IGC_TSYNCRXCFG_PTP_V2_PATH_DELAY_RESP_MESSAGE	0x0300
-#define IGC_TSYNCRXCFG_PTP_V2_FOLLOWUP_MESSAGE	0x0800
+#define IGC_TSYNCRXCFG_PTP_V2_FOLLOWUP_MESSAGE		0x0800
 #define IGC_TSYNCRXCFG_PTP_V2_DELAY_RESP_MESSAGE	0x0900
 #define IGC_TSYNCRXCFG_PTP_V2_PATH_DELAY_FOLLOWUP_MESSAGE 0x0A00
-#define IGC_TSYNCRXCFG_PTP_V2_ANNOUNCE_MESSAGE	0x0B00
+#define IGC_TSYNCRXCFG_PTP_V2_ANNOUNCE_MESSAGE		0x0B00
 #define IGC_TSYNCRXCFG_PTP_V2_SIGNALLING_MESSAGE	0x0C00
 #define IGC_TSYNCRXCFG_PTP_V2_MANAGEMENT_MESSAGE	0x0D00
 
-#define IGC_TIMINCA_16NS_SHIFT	24
+#define IGC_TIMINCA_16NS_SHIFT		24
 #define IGC_TIMINCA_INCPERIOD_SHIFT	24
 #define IGC_TIMINCA_INCVALUE_MASK	0x00FFFFFF
 
@@ -758,35 +730,35 @@
 
 /* ETQF register bit definitions */
 #define IGC_ETQF_1588			(1 << 30)
-#define IGC_FTQF_VF_BP		0x00008000
+#define IGC_FTQF_VF_BP			0x00008000
 #define IGC_FTQF_1588_TIME_STAMP	0x08000000
 #define IGC_FTQF_MASK			0xF0000000
-#define IGC_FTQF_MASK_PROTO_BP	0x10000000
+#define IGC_FTQF_MASK_PROTO_BP		0x10000000
 /* Immediate Interrupt Rx (A.K.A. Low Latency Interrupt) */
 #define IGC_IMIREXT_CTRL_BP	0x00080000  /* Bypass check of ctrl bits */
 #define IGC_IMIREXT_SIZE_BP	0x00001000  /* Packet size bypass */
 
 #define IGC_RXDADV_STAT_TSIP		0x08000 /* timestamp in packet */
-#define IGC_TSICR_TXTS		0x00000002
+#define IGC_TSICR_TXTS			0x00000002
 #define IGC_TSIM_TXTS			0x00000002
 /* TUPLE Filtering Configuration */
 #define IGC_TTQF_DISABLE_MASK		0xF0008000 /* TTQF Disable Mask */
 #define IGC_TTQF_QUEUE_ENABLE		0x100   /* TTQF Queue Enable Bit */
-#define IGC_TTQF_PROTOCOL_MASK	0xFF    /* TTQF Protocol Mask */
+#define IGC_TTQF_PROTOCOL_MASK		0xFF    /* TTQF Protocol Mask */
 /* TTQF TCP Bit, shift with IGC_TTQF_PROTOCOL SHIFT */
 #define IGC_TTQF_PROTOCOL_TCP		0x0
 /* TTQF UDP Bit, shift with IGC_TTQF_PROTOCOL_SHIFT */
 #define IGC_TTQF_PROTOCOL_UDP		0x1
 /* TTQF SCTP Bit, shift with IGC_TTQF_PROTOCOL_SHIFT */
-#define IGC_TTQF_PROTOCOL_SCTP	0x2
-#define IGC_TTQF_PROTOCOL_SHIFT	5       /* TTQF Protocol Shift */
+#define IGC_TTQF_PROTOCOL_SCTP		0x2
+#define IGC_TTQF_PROTOCOL_SHIFT		5       /* TTQF Protocol Shift */
 #define IGC_TTQF_QUEUE_SHIFT		16      /* TTQF Queue Shfit */
-#define IGC_TTQF_RX_QUEUE_MASK	0x70000 /* TTQF Queue Mask */
+#define IGC_TTQF_RX_QUEUE_MASK		0x70000 /* TTQF Queue Mask */
 #define IGC_TTQF_MASK_ENABLE		0x10000000 /* TTQF Mask Enable Bit */
 #define IGC_IMIR_CLEAR_MASK		0xF001FFFF /* IMIR Reg Clear Mask */
 #define IGC_IMIR_PORT_BYPASS		0x20000 /* IMIR Port Bypass Bit */
-#define IGC_IMIR_PRIORITY_SHIFT	29 /* IMIR Priority Shift */
-#define IGC_IMIREXT_CLEAR_MASK	0x7FFFF /* IMIREXT Reg Clear Mask */
+#define IGC_IMIR_PRIORITY_SHIFT		29 /* IMIR Priority Shift */
+#define IGC_IMIREXT_CLEAR_MASK		0x7FFFF /* IMIREXT Reg Clear Mask */
 
 #define IGC_MDICNFG_EXT_MDIO		0x80000000 /* MDI ext/int destination */
 #define IGC_MDICNFG_COM_MDIO		0x40000000 /* MDI shared w/ lan 0 */
@@ -795,13 +767,13 @@
 
 #define IGC_MEDIA_PORT_COPPER			1
 #define IGC_MEDIA_PORT_OTHER			2
-#define IGC_M88E1112_AUTO_COPPER_SGMII	0x2
-#define IGC_M88E1112_AUTO_COPPER_BASEX	0x3
+#define IGC_M88E1112_AUTO_COPPER_SGMII		0x2
+#define IGC_M88E1112_AUTO_COPPER_BASEX		0x3
 #define IGC_M88E1112_STATUS_LINK		0x0004 /* Interface Link Bit */
-#define IGC_M88E1112_MAC_CTRL_1		0x10
+#define IGC_M88E1112_MAC_CTRL_1			0x10
 #define IGC_M88E1112_MAC_CTRL_1_MODE_MASK	0x0380 /* Mode Select */
 #define IGC_M88E1112_MAC_CTRL_1_MODE_SHIFT	7
-#define IGC_M88E1112_PAGE_ADDR		0x16
+#define IGC_M88E1112_PAGE_ADDR			0x16
 #define IGC_M88E1112_STATUS			0x01
 
 #define IGC_THSTAT_LOW_EVENT		0x20000000 /* Low thermal threshold */
@@ -811,38 +783,38 @@
 #define IGC_THSTAT_LINK_THROTTLE	0x00000002 /* Link Spd Throttle Event */
 
 /* EEE defines */
-#define IGC_IPCNFG_EEE_2_5G_AN	0x00000010 /* IPCNFG EEE Ena 2.5G AN */
+#define IGC_IPCNFG_EEE_2_5G_AN		0x00000010 /* IPCNFG EEE Ena 2.5G AN */
 #define IGC_IPCNFG_EEE_1G_AN		0x00000008 /* IPCNFG EEE Ena 1G AN */
-#define IGC_IPCNFG_EEE_100M_AN	0x00000004 /* IPCNFG EEE Ena 100M AN */
+#define IGC_IPCNFG_EEE_100M_AN		0x00000004 /* IPCNFG EEE Ena 100M AN */
 #define IGC_EEER_TX_LPI_EN		0x00010000 /* EEER Tx LPI Enable */
 #define IGC_EEER_RX_LPI_EN		0x00020000 /* EEER Rx LPI Enable */
-#define IGC_EEER_LPI_FC		0x00040000 /* EEER Ena on Flow Cntrl */
+#define IGC_EEER_LPI_FC			0x00040000 /* EEER Ena on Flow Cntrl */
 /* EEE status */
 #define IGC_EEER_EEE_NEG		0x20000000 /* EEE capability nego */
-#define IGC_EEER_RX_LPI_STATUS	0x40000000 /* Rx in LPI state */
-#define IGC_EEER_TX_LPI_STATUS	0x80000000 /* Tx in LPI state */
+#define IGC_EEER_RX_LPI_STATUS		0x40000000 /* Rx in LPI state */
+#define IGC_EEER_TX_LPI_STATUS		0x80000000 /* Tx in LPI state */
 #define IGC_EEE_LP_ADV_ADDR_I350	0x040F     /* EEE LP Advertisement */
-#define IGC_M88E1543_PAGE_ADDR	0x16       /* Page Offset Register */
-#define IGC_M88E1543_EEE_CTRL_1	0x0
+#define IGC_M88E1543_PAGE_ADDR		0x16       /* Page Offset Register */
+#define IGC_M88E1543_EEE_CTRL_1		0x0
 #define IGC_M88E1543_EEE_CTRL_1_MS	0x0001     /* EEE Master/Slave */
-#define IGC_M88E1543_FIBER_CTRL	0x0        /* Fiber Control Register */
+#define IGC_M88E1543_FIBER_CTRL		0x0        /* Fiber Control Register */
 #define IGC_EEE_ADV_DEV_I354		7
 #define IGC_EEE_ADV_ADDR_I354		60
 #define IGC_EEE_ADV_100_SUPPORTED	(1 << 1)   /* 100BaseTx EEE Supported */
 #define IGC_EEE_ADV_1000_SUPPORTED	(1 << 2)   /* 1000BaseT EEE Supported */
-#define IGC_PCS_STATUS_DEV_I354	3
+#define IGC_PCS_STATUS_DEV_I354		3
 #define IGC_PCS_STATUS_ADDR_I354	1
 #define IGC_PCS_STATUS_RX_LPI_RCVD	0x0400
 #define IGC_PCS_STATUS_TX_LPI_RCVD	0x0800
-#define IGC_M88E1512_CFG_REG_1	0x0010
-#define IGC_M88E1512_CFG_REG_2	0x0011
-#define IGC_M88E1512_CFG_REG_3	0x0007
+#define IGC_M88E1512_CFG_REG_1		0x0010
+#define IGC_M88E1512_CFG_REG_2		0x0011
+#define IGC_M88E1512_CFG_REG_3		0x0007
 #define IGC_M88E1512_MODE		0x0014
-#define IGC_EEE_SU_LPI_CLK_STP	0x00800000 /* EEE LPI Clock Stop */
-#define IGC_EEE_LP_ADV_DEV_I225	7          /* EEE LP Adv Device */
+#define IGC_EEE_SU_LPI_CLK_STP		0x00800000 /* EEE LPI Clock Stop */
+#define IGC_EEE_LP_ADV_DEV_I225		7          /* EEE LP Adv Device */
 #define IGC_EEE_LP_ADV_ADDR_I225	61         /* EEE LP Adv Register */
 
-#define IGC_MMDAC_FUNC_DATA	0x4000 /* Data, no post increment */
+#define IGC_MMDAC_FUNC_DATA		0x4000 /* Data, no post increment */
 
 /* PHY Control Register */
 #define MII_CR_SPEED_SELECT_MSB	0x0040  /* bits 6,13: 10=1000, 01=100, 00=10 */
@@ -971,22 +943,22 @@
 /* NVM Addressing bits based on type 0=small, 1=large */
 #define IGC_EECD_ADDR_BITS	0x00000400
 #define IGC_NVM_GRANT_ATTEMPTS	1000 /* NVM # attempts to gain grant */
-#define IGC_EECD_AUTO_RD		0x00000200  /* NVM Auto Read done */
-#define IGC_EECD_SIZE_EX_MASK		0x00007800  /* NVM Size */
+#define IGC_EECD_AUTO_RD	0x00000200  /* NVM Auto Read done */
+#define IGC_EECD_SIZE_EX_MASK	0x00007800  /* NVM Size */
 #define IGC_EECD_SIZE_EX_SHIFT	11
 #define IGC_EECD_FLUPD		0x00080000 /* Update FLASH */
 #define IGC_EECD_AUPDEN		0x00100000 /* Ena Auto FLASH update */
-#define IGC_EECD_SEC1VAL		0x00400000 /* Sector One Valid */
+#define IGC_EECD_SEC1VAL	0x00400000 /* Sector One Valid */
 #define IGC_EECD_SEC1VAL_VALID_MASK	(IGC_EECD_AUTO_RD | IGC_EECD_PRES)
 
 #define IGC_EECD_FLUPD_I225		0x00800000 /* Update FLASH */
 #define IGC_EECD_FLUDONE_I225		0x04000000 /* Update FLASH done */
 #define IGC_EECD_FLASH_DETECTED_I225	0x00080000 /* FLASH detected */
 #define IGC_FLUDONE_ATTEMPTS		20000
-#define IGC_EERD_EEWR_MAX_COUNT	512 /* buffered EEPROM words rw */
+#define IGC_EERD_EEWR_MAX_COUNT		512 /* buffered EEPROM words rw */
 #define IGC_EECD_SEC1VAL_I225		0x02000000 /* Sector One Valid */
 #define IGC_FLSECU_BLK_SW_ACCESS_I225	0x00000004 /* Block SW access */
-#define IGC_FWSM_FW_VALID_I225	0x8000 /* FW valid bit */
+#define IGC_FWSM_FW_VALID_I225		0x8000 /* FW valid bit */
 
 #define IGC_NVM_RW_REG_DATA	16  /* Offset to data in NVM read/write regs */
 #define IGC_NVM_RW_REG_DONE	2   /* Offset to READ/WRITE done bit */
@@ -1110,8 +1082,8 @@
  * I = Integrated
  * E = External
  */
-#define M88IGC_E_PHY_ID	0x01410C50
-#define M88IGC_I_PHY_ID	0x01410C30
+#define M88IGC_E_PHY_ID		0x01410C50
+#define M88IGC_I_PHY_ID		0x01410C30
 #define M88E1011_I_PHY_ID	0x01410C20
 #define IGP01IGC_I_PHY_ID	0x02A80380
 #define M88E1111_I_PHY_ID	0x01410CC0
@@ -1124,7 +1096,7 @@
 
 /* M88IGC Specific Registers */
 #define M88IGC_PHY_SPEC_CTRL		0x10  /* PHY Specific Control Reg */
-#define M88IGC_PHY_SPEC_STATUS	0x11  /* PHY Specific Status Reg */
+#define M88IGC_PHY_SPEC_STATUS		0x11  /* PHY Specific Status Reg */
 #define M88IGC_EXT_PHY_SPEC_CTRL	0x14  /* Extended PHY Specific Cntrl */
 #define M88IGC_RX_ERR_CNTR		0x15  /* Receive Error Counter */
 
@@ -1139,7 +1111,7 @@
 /* 1000BASE-T: Auto crossover, 100BASE-TX/10BASE-T: MDI Mode */
 #define M88IGC_PSCR_AUTO_X_1000T	0x0040
 /* Auto crossover enabled all speeds */
-#define M88IGC_PSCR_AUTO_X_MODE	0x0060
+#define M88IGC_PSCR_AUTO_X_MODE		0x0060
 #define M88IGC_PSCR_ASSERT_CRS_ON_TX	0x0800 /* 1=Assert CRS on Tx */
 
 /* M88IGC PHY Specific Status Register */
@@ -1169,8 +1141,8 @@
  * are the slave
  */
 #define M88IGC_EPSCR_SLAVE_DOWNSHIFT_MASK	0x0300
-#define M88IGC_EPSCR_SLAVE_DOWNSHIFT_1X	0x0100
-#define M88IGC_EPSCR_TX_CLK_25	0x0070 /* 25  MHz TX_CLK */
+#define M88IGC_EPSCR_SLAVE_DOWNSHIFT_1X		0x0100
+#define M88IGC_EPSCR_TX_CLK_25			0x0070 /* 25  MHz TX_CLK */
 
 
 /* M88EC018 Rev 2 specific DownShift settings */
@@ -1213,10 +1185,10 @@
 #define IGC_MDIC_PHY_SHIFT	21
 #define IGC_MDIC_OP_WRITE	0x04000000
 #define IGC_MDIC_OP_READ	0x08000000
-#define IGC_MDIC_READY	0x10000000
-#define IGC_MDIC_ERROR	0x40000000
+#define IGC_MDIC_READY		0x10000000
+#define IGC_MDIC_ERROR		0x40000000
 
-#define IGC_N0_QUEUE -1
+#define IGC_N0_QUEUE 		-1
 
 #define IGC_MAX_MAC_HDR_LEN	127
 #define IGC_MAX_NETWORK_HDR_LEN	511
@@ -1226,36 +1198,36 @@
 #define IGC_VLANPQF_QUEUE_MASK	0x03
 #define IGC_VFTA_BLOCK_SIZE	8
 /* SerDes Control */
-#define IGC_GEN_POLL_TIMEOUT		640
+#define IGC_GEN_POLL_TIMEOUT	640
 
 /* DMA Coalescing register fields */
 /* DMA Coalescing Watchdog Timer */
-#define IGC_DMACR_DMACWT_MASK		0x00003FFF
+#define IGC_DMACR_DMACWT_MASK	0x00003FFF
 /* DMA Coalescing Rx Threshold */
 #define IGC_DMACR_DMACTHR_MASK	0x00FF0000
 #define IGC_DMACR_DMACTHR_SHIFT	16
 /* Lx when no PCIe transactions */
 #define IGC_DMACR_DMAC_LX_MASK	0x30000000
 #define IGC_DMACR_DMAC_LX_SHIFT	28
-#define IGC_DMACR_DMAC_EN		0x80000000 /* Enable DMA Coalescing */
+#define IGC_DMACR_DMAC_EN	0x80000000 /* Enable DMA Coalescing */
 /* DMA Coalescing BMC-to-OS Watchdog Enable */
 #define IGC_DMACR_DC_BMC2OSW_EN	0x00008000
 
 /* DMA Coalescing Transmit Threshold */
 #define IGC_DMCTXTH_DMCTTHR_MASK	0x00000FFF
 
-#define IGC_DMCTLX_TTLX_MASK		0x00000FFF /* Time to LX request */
+#define IGC_DMCTLX_TTLX_MASK	0x00000FFF /* Time to LX request */
 
 /* Rx Traffic Rate Threshold */
-#define IGC_DMCRTRH_UTRESH_MASK	0x0007FFFF
+#define IGC_DMCRTRH_UTRESH_MASK		0x0007FFFF
 /* Rx packet rate in current window */
 #define IGC_DMCRTRH_LRPRCW		0x80000000
 
 /* DMA Coal Rx Traffic Current Count */
-#define IGC_DMCCNT_CCOUNT_MASK	0x01FFFFFF
+#define IGC_DMCCNT_CCOUNT_MASK		0x01FFFFFF
 
 /* Flow ctrl Rx Threshold High val */
-#define IGC_FCRTC_RTH_COAL_MASK	0x0003FFF0
+#define IGC_FCRTC_RTH_COAL_MASK		0x0003FFF0
 #define IGC_FCRTC_RTH_COAL_SHIFT	4
 /* Lx power decision based on DMA coal */
 #define IGC_PCIEMISC_LX_DECISION	0x00000080
@@ -1270,34 +1242,34 @@
 /* Minimum time for 1000BASE-T where no data will be transmit following move out
  * of EEE LPI Tx state
  */
-#define IGC_TW_SYSTEM_1000_MASK	0x000000FF
+#define IGC_TW_SYSTEM_1000_MASK		0x000000FF
 /* Minimum time for 100BASE-T where no data will be transmit following move out
  * of EEE LPI Tx state
  */
-#define IGC_TW_SYSTEM_100_MASK	0x0000FF00
-#define IGC_TW_SYSTEM_100_SHIFT	8
+#define IGC_TW_SYSTEM_100_MASK		0x0000FF00
+#define IGC_TW_SYSTEM_100_SHIFT		8
 #define IGC_LTRMINV_LTRV_MASK		0x000003FF /* LTR minimum value */
 #define IGC_LTRMAXV_LTRV_MASK		0x000003FF /* LTR maximum value */
-#define IGC_LTRMINV_SCALE_MASK	0x00001C00 /* LTR minimum scale */
-#define IGC_LTRMINV_SCALE_SHIFT	10
+#define IGC_LTRMINV_SCALE_MASK		0x00001C00 /* LTR minimum scale */
+#define IGC_LTRMINV_SCALE_SHIFT		10
 /* Reg val to set scale to 1024 nsec */
-#define IGC_LTRMINV_SCALE_1024	2
+#define IGC_LTRMINV_SCALE_1024		2
 /* Reg val to set scale to 32768 nsec */
-#define IGC_LTRMINV_SCALE_32768	3
+#define IGC_LTRMINV_SCALE_32768		3
 #define IGC_LTRMINV_LSNP_REQ		0x00008000 /* LTR Snoop Requirement */
-#define IGC_LTRMAXV_SCALE_MASK	0x00001C00 /* LTR maximum scale */
-#define IGC_LTRMAXV_SCALE_SHIFT	10
+#define IGC_LTRMAXV_SCALE_MASK		0x00001C00 /* LTR maximum scale */
+#define IGC_LTRMAXV_SCALE_SHIFT		10
 /* Reg val to set scale to 1024 nsec */
-#define IGC_LTRMAXV_SCALE_1024	2
+#define IGC_LTRMAXV_SCALE_1024		2
 /* Reg val to set scale to 32768 nsec */
-#define IGC_LTRMAXV_SCALE_32768	3
+#define IGC_LTRMAXV_SCALE_32768		3
 #define IGC_LTRMAXV_LSNP_REQ		0x00008000 /* LTR Snoop Requirement */
 
 #define I225_RXPBSIZE_DEFAULT		0x000000A2 /* RXPBSIZE default */
 #define I225_TXPBSIZE_DEFAULT		0x04000014 /* TXPBSIZE default */
 #define IGC_RXPBS_SIZE_I225_MASK	0x0000003F /* Rx packet buffer size */
 #define IGC_TXPB0S_SIZE_I225_MASK	0x0000003F /* Tx packet buffer 0 size */
-#define IGC_STM_OPCODE		0xDB00
+#define IGC_STM_OPCODE			0xDB00
 #define IGC_EEPROM_FLASH_SIZE_WORD	0x11
 #define INVM_DWORD_TO_RECORD_TYPE(invm_dword) \
 	(u8)((invm_dword) & 0x7)
@@ -1313,16 +1285,16 @@
 #define IGC_INVM_VER_FIELD_TWO		0x7FE000
 #define IGC_INVM_IMGTYPE_FIELD		0x1F800000
 
-#define IGC_INVM_MAJOR_MASK	0x3F0
-#define IGC_INVM_MINOR_MASK	0xF
-#define IGC_INVM_MAJOR_SHIFT	4
+#define IGC_INVM_MAJOR_MASK		0x3F0
+#define IGC_INVM_MINOR_MASK		0xF
+#define IGC_INVM_MAJOR_SHIFT		4
 
 /* PLL Defines */
-#define IGC_PCI_PMCSR		0x44
+#define IGC_PCI_PMCSR			0x44
 #define IGC_PCI_PMCSR_D3		0x03
 #define IGC_MAX_PLL_TRIES		5
 #define IGC_PHY_PLL_UNCONF		0xFF
-#define IGC_PHY_PLL_FREQ_PAGE	0xFC0000
+#define IGC_PHY_PLL_FREQ_PAGE		0xFC0000
 #define IGC_PHY_PLL_FREQ_REG		0x000E
 #define IGC_INVM_DEFAULT_AL		0x202F
 #define IGC_INVM_AUTOLOAD		0x0A
@@ -1337,24 +1309,24 @@
 #define IGC_PROXYFCEX_IGMP		0x00000020 /* IGMP */
 #define IGC_PROXYFCEX_IGMP_M		0x00000040 /* IGMP Multicast */
 #define IGC_PROXYFCEX_ARPRES		0x00000080 /* ARP Response */
-#define IGC_PROXYFCEX_ARPRES_D	0x00000100 /* ARP Response Directed */
+#define IGC_PROXYFCEX_ARPRES_D		0x00000100 /* ARP Response Directed */
 #define IGC_PROXYFCEX_ICMPV4		0x00000200 /* ICMPv4 */
-#define IGC_PROXYFCEX_ICMPV4_D	0x00000400 /* ICMPv4 Directed */
+#define IGC_PROXYFCEX_ICMPV4_D		0x00000400 /* ICMPv4 Directed */
 #define IGC_PROXYFCEX_ICMPV6		0x00000800 /* ICMPv6 */
-#define IGC_PROXYFCEX_ICMPV6_D	0x00001000 /* ICMPv6 Directed */
+#define IGC_PROXYFCEX_ICMPV6_D		0x00001000 /* ICMPv6 Directed */
 #define IGC_PROXYFCEX_DNS		0x00002000 /* DNS */
 
 /* Proxy Filter Control */
-#define IGC_PROXYFC_D0		0x00000001 /* Enable offload in D0 */
-#define IGC_PROXYFC_EX		0x00000004 /* Directed exact proxy */
-#define IGC_PROXYFC_MC		0x00000008 /* Directed MC Proxy */
-#define IGC_PROXYFC_BC		0x00000010 /* Broadcast Proxy Enable */
+#define IGC_PROXYFC_D0			0x00000001 /* Enable offload in D0 */
+#define IGC_PROXYFC_EX			0x00000004 /* Directed exact proxy */
+#define IGC_PROXYFC_MC			0x00000008 /* Directed MC Proxy */
+#define IGC_PROXYFC_BC			0x00000010 /* Broadcast Proxy Enable */
 #define IGC_PROXYFC_ARP_DIRECTED	0x00000020 /* Directed ARP Proxy Ena */
 #define IGC_PROXYFC_IPV4		0x00000040 /* Directed IPv4 Enable */
 #define IGC_PROXYFC_IPV6		0x00000080 /* Directed IPv6 Enable */
-#define IGC_PROXYFC_NS		0x00000200 /* IPv6 Neighbor Solicitation */
-#define IGC_PROXYFC_NS_DIRECTED	0x00000400 /* Directed NS Proxy Ena */
-#define IGC_PROXYFC_ARP		0x00000800 /* ARP Request Proxy Ena */
+#define IGC_PROXYFC_NS			0x00000200 /* IPv6 Neighbor Solicitation */
+#define IGC_PROXYFC_NS_DIRECTED		0x00000400 /* Directed NS Proxy Ena */
+#define IGC_PROXYFC_ARP			0x00000800 /* ARP Request Proxy Ena */
 /* Proxy Status */
 #define IGC_PROXYS_CLEAR		0xFFFFFFFF /* Clear */
 

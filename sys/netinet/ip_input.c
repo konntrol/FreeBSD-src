@@ -319,9 +319,6 @@ ip_init(void)
 	if ((i = pfil_head_register(&V_inet_pfil_hook)) != 0)
 		printf("%s: WARNING: unable to register pfil hook, "
 			"error %d\n", __func__, i);
-	else
-		pfil_head_export_sysctl(&V_inet_pfil_hook,
-			SYSCTL_STATIC_CHILDREN(_net_inet_ip));
 
 	if (hhook_head_register(HHOOK_TYPE_IPSEC_IN, AF_INET,
 	    &V_ipsec_hhh_in[HHOOK_IPSEC_INET],
@@ -715,7 +712,7 @@ passin:
 	 * into the stack for SIMPLEX interfaces handled by ether_output().
 	 */
 	if (ifp != NULL && ifp->if_flags & IFF_BROADCAST) {
-		IF_ADDR_RLOCK(ifp);
+		IF_ADDR_RLOCK_COND(ifp);
 		CK_STAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != AF_INET)
 				continue;
@@ -725,7 +722,7 @@ passin:
 				counter_u64_add(ia->ia_ifa.ifa_ipackets, 1);
 				counter_u64_add(ia->ia_ifa.ifa_ibytes,
 				    m->m_pkthdr.len);
-				IF_ADDR_RUNLOCK(ifp);
+				IF_ADDR_RUNLOCK_COND(ifp);
 				goto ours;
 			}
 #ifdef BOOTP_COMPAT
@@ -733,12 +730,12 @@ passin:
 				counter_u64_add(ia->ia_ifa.ifa_ipackets, 1);
 				counter_u64_add(ia->ia_ifa.ifa_ibytes,
 				    m->m_pkthdr.len);
-				IF_ADDR_RUNLOCK(ifp);
+				IF_ADDR_RUNLOCK_COND(ifp);
 				goto ours;
 			}
 #endif
 		}
-		IF_ADDR_RUNLOCK(ifp);
+		IF_ADDR_RUNLOCK_COND(ifp);
 		ia = NULL;
 	}
 	if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr))) {
@@ -957,6 +954,7 @@ u_char inetctlerrmap[PRC_NCMDS] = {
 void
 ip_forward(struct mbuf *m, int srcrt)
 {
+	struct net_epoch_enter_cond neec;
 	struct ip *ip = mtod(m, struct ip *);
 	struct in_ifaddr *ia;
 	struct mbuf *mcopy;
@@ -991,7 +989,7 @@ ip_forward(struct mbuf *m, int srcrt)
 #else
 	in_rtalloc_ign(&ro, 0, M_GETFIB(m));
 #endif
-	NET_EPOCH_ENTER();
+	NET_EPOCH_ENTER_COND(&neec);
 	if (ro.ro_rt != NULL) {
 		ia = ifatoia(ro.ro_rt->rt_ifa);
 	} else
@@ -1143,7 +1141,7 @@ ip_forward(struct mbuf *m, int srcrt)
 	}
 	icmp_error(mcopy, type, code, dest.s_addr, mtu);
  out:
-	NET_EPOCH_EXIT();
+	NET_EPOCH_EXIT_COND(&neec);
 }
 
 #define	CHECK_SO_CT(sp, ct) \

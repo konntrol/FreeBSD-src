@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2016 Nicole Graziano <nicole@nextbsd.org>
- * Copyright (c) 2020 Rubicon Communications, LLC (Netgate)
  * All rights reserved.
+ * Copyright (c) 2021 Rubicon Communications, LLC (Netgate)
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,10 +27,17 @@
  * SUCH DAMAGE.
  */
 
-/* $FreeBSD$ */
+#include <sys/cdefs.h>
+__FBSDID("$FreeBSD$");
+
 #include "if_igc.h"
 #include <sys/sbuf.h>
 #include <machine/_inttypes.h>
+
+#ifdef RSS
+#include <net/rss_config.h>
+#include <netinet/in_rss.h>
+#endif
 
 /*********************************************************************
  *  PCI Device ID Table
@@ -43,22 +50,22 @@
 
 static pci_vendor_info_t igc_vendor_info_array[] =
 {
-#define	IGC_BOARD_NAME		"Intel(R) PRO/1000 PCI-Express Network Driver"
 	/* Intel(R) PRO/1000 Network Connection - igc */
-	PVID(0x8086, IGC_DEV_ID_I225_LM, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I225_V, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I225_K, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I225_I, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I225_V, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I225_K2, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I225_LMVP, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I225_IT, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I226_LM, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I226_V, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I226_IT, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I221_V, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I226_BLANK_NVM, IGC_BOARD_NAME),
-	PVID(0x8086, IGC_DEV_ID_I225_BLANK_NVM, IGC_BOARD_NAME),
+	PVID(0x8086, IGC_DEV_ID_I225_LM, "Intel(R) Ethernet Controller I225-LM"),
+	PVID(0x8086, IGC_DEV_ID_I225_V, "Intel(R) Ethernet Controller I225-V"),
+	PVID(0x8086, IGC_DEV_ID_I225_K, "Intel(R) Ethernet Controller I225-K"),
+	PVID(0x8086, IGC_DEV_ID_I225_I, "Intel(R) Ethernet Controller I225-I"),
+	PVID(0x8086, IGC_DEV_ID_I220_V, "Intel(R) Ethernet Controller I220-V"),
+	PVID(0x8086, IGC_DEV_ID_I225_K2, "Intel(R) Ethernet Controller I225-K(2)"),
+	PVID(0x8086, IGC_DEV_ID_I225_LMVP, "Intel(R) Ethernet Controller I225-LMvP(2)"),
+	PVID(0x8086, IGC_DEV_ID_I226_K, "Intel(R) Ethernet Controller I226-K"),
+	PVID(0x8086, IGC_DEV_ID_I225_IT, "Intel(R) Ethernet Controller I225-IT(2)"),
+	PVID(0x8086, IGC_DEV_ID_I226_LM, "Intel(R) Ethernet Controller I226-LM"),
+	PVID(0x8086, IGC_DEV_ID_I226_V, "Intel(R) Ethernet Controller I226-V"),
+	PVID(0x8086, IGC_DEV_ID_I226_IT, "Intel(R) Ethernet Controller I226-IT"),
+	PVID(0x8086, IGC_DEV_ID_I221_V, "Intel(R) Ethernet Controller I221-V"),
+	PVID(0x8086, IGC_DEV_ID_I226_BLANK_NVM, "Intel(R) Ethernet Controller I226(blankNVM)"),
+	PVID(0x8086, IGC_DEV_ID_I225_BLANK_NVM, "Intel(R) Ethernet Controller I225(blankNVM)"),
 	/* required last entry */
 	PVID_END
 };
@@ -127,7 +134,6 @@ static void	igc_get_wakeup(if_ctx_t ctx);
 static void	igc_enable_wakeup(if_ctx_t ctx);
 
 int		igc_intr(void *arg);
-static void	igc_disable_promisc(if_ctx_t ctx);
 
 /* MSI-X handlers */
 static int	igc_if_msix_intr_assign(if_ctx_t, int);
@@ -222,7 +228,8 @@ static driver_t igc_if_driver = {
 #define CSUM_TSO	0
 #endif
 
-static SYSCTL_NODE(_hw, OID_AUTO, igc, CTLFLAG_RD, 0, "igc driver parameters");
+static SYSCTL_NODE(_hw, OID_AUTO, igc, CTLFLAG_RD | CTLFLAG_MPSAFE, 0,
+    "igc driver parameters");
 
 static int igc_disable_crc_stripping = 0;
 SYSCTL_INT(_hw_igc, OID_AUTO, disable_crc_stripping, CTLFLAG_RDTUN,
@@ -244,12 +251,12 @@ SYSCTL_INT(_hw_igc, OID_AUTO, rx_abs_int_delay, CTLFLAG_RDTUN,
     &igc_rx_abs_int_delay_dflt, 0,
     "Default receive interrupt delay limit in usecs");
 
-static int igc_smart_pwr_down = FALSE;
+static int igc_smart_pwr_down = false;
 SYSCTL_INT(_hw_igc, OID_AUTO, smart_pwr_down, CTLFLAG_RDTUN, &igc_smart_pwr_down,
     0, "Set to true to leave smart power down enabled on newer adapters");
 
 /* Controls whether promiscuous also shows bad packets */
-static int igc_debug_sbp = TRUE;
+static int igc_debug_sbp = true;
 SYSCTL_INT(_hw_igc, OID_AUTO, sbp, CTLFLAG_RDTUN, &igc_debug_sbp, 0,
     "Show bad packets in promiscuous mode");
 
@@ -281,7 +288,7 @@ static struct if_shared_ctx igc_sctx_init = {
 	.isc_tx_maxsegsize = PAGE_SIZE,
 	.isc_tso_maxsize = IGC_TSO_SIZE + sizeof(struct ether_vlan_header),
 	.isc_tso_maxsegsize = IGC_TSO_SEG_SIZE,
-	.isc_rx_maxsize = MJUM9BYTES,
+	.isc_rx_maxsize = MAX_JUMBO_FRAME_SIZE,
 	.isc_rx_nsegments = 1,
 	.isc_rx_maxsegsize = MJUM9BYTES,
 	.isc_nfl = 1,
@@ -300,8 +307,6 @@ static struct if_shared_ctx igc_sctx_init = {
 	.isc_nrxd_default = {IGC_DEFAULT_RXD},
 	.isc_ntxd_default = {IGC_DEFAULT_TXD},
 };
-
-if_shared_ctx_t igc_sctx = &igc_sctx_init;
 
 /*****************************************************************
  *
@@ -421,7 +426,7 @@ static int igc_get_regs(SYSCTL_HANDLER_ARGS)
 static void *
 igc_register(device_t dev)
 {
-	return (igc_sctx);
+	return (&igc_sctx_init);
 }
 
 static int
@@ -536,7 +541,7 @@ igc_if_attach_pre(if_ctx_t ctx)
 	}
 
 	/* Do Shared Code initialization */
-	error = igc_setup_init_funcs(hw, TRUE);
+	error = igc_setup_init_funcs(hw, true);
 	if (error) {
 		device_printf(dev, "Setup of Shared code failed, error %d\n",
 		    error);
@@ -571,14 +576,12 @@ igc_if_attach_pre(if_ctx_t ctx)
 	    DEFAULT_ITR);
 
 	hw->mac.autoneg = DO_AUTO_NEG;
-	hw->phy.autoneg_wait_to_complete = FALSE;
+	hw->phy.autoneg_wait_to_complete = false;
 	hw->phy.autoneg_advertised = AUTONEG_ADV_DEFAULT;
 
 	/* Copper options */
 	if (hw->phy.media_type == igc_media_type_copper) {
 		hw->phy.mdix = AUTO_ALL_MODES;
-		hw->phy.disable_polarity_correction = FALSE;
-		hw->phy.ms_type = IGC_MASTER_SLAVE;
 	}
 
 	/*
@@ -587,12 +590,6 @@ igc_if_attach_pre(if_ctx_t ctx)
 	 */
 	scctx->isc_max_frame_size = adapter->hw.mac.max_frame_size =
 	    ETHERMTU + ETHER_HDR_LEN + ETHERNET_FCS_SIZE;
-
-	/*
-	 * This controls when hardware reports transmit completion
-	 * status.
-	 */
-	hw->mac.report_tx_early = 1;
 
 	/* Allocate multicast array memory. */
 	adapter->mta = malloc(sizeof(u8) * ETHER_ADDR_LEN *
@@ -682,7 +679,7 @@ igc_if_attach_post(if_ctx_t ctx)
 	struct igc_adapter *adapter = iflib_get_softc(ctx);
 	struct igc_hw *hw = &adapter->hw;
 	int error = 0;
-	
+
 	/* Setup OS specific network interface */
 	error = igc_setup_interface(ctx);
 	if (error != 0) {
@@ -693,13 +690,12 @@ igc_if_attach_post(if_ctx_t ctx)
 
 	/* Initialize statistics */
 	igc_update_stats_counters(adapter);
-	hw->mac.get_link_status = 1;
+	hw->mac.get_link_status = true;
 	igc_if_update_admin_status(ctx);
 	igc_add_hw_stats(adapter);
 
-	/* Non-AMT based hardware can now take control from firmware */
-	if (adapter->has_manage && !adapter->has_amt)
-		igc_get_hw_control(adapter);
+	/* the driver can now take control from firmware */
+	igc_get_hw_control(adapter);
 
 	INIT_DEBUGOUT("igc_if_attach_post: end");
 
@@ -872,12 +868,11 @@ igc_if_init(if_ctx_t ctx)
 	IGC_READ_REG(&adapter->hw, IGC_ICR);
 	IGC_WRITE_REG(&adapter->hw, IGC_ICS, IGC_ICS_LSC);
 
-	/* AMT based hardware can now take control from firmware */
-	if (adapter->has_manage && adapter->has_amt)
-		igc_get_hw_control(adapter);
+	/* the driver can now take control from firmware */
+	igc_get_hw_control(adapter);
 
 	/* Set Energy Efficient Ethernet */
-	igc_set_eee_i225(&adapter->hw, TRUE, TRUE, TRUE);
+	igc_set_eee_i225(&adapter->hw, true, true, true);
 }
 
 /*********************************************************************
@@ -992,7 +987,7 @@ igc_handle_link(void *context)
 	if_ctx_t ctx = context;
 	struct igc_adapter *adapter = iflib_get_softc(ctx);
 
-	adapter->hw.mac.get_link_status = 1;
+	adapter->hw.mac.get_link_status = true;
 	iflib_admin_intr_deferred(ctx);
 }
 
@@ -1034,9 +1029,9 @@ igc_if_media_status(if_ctx_t ctx, struct ifmediareq *ifmr)
 		break;
 	case 2500:
                 ifmr->ifm_active |= IFM_2500_T;
-                break;		
+                break;
 	}
-	
+
 	if (adapter->link_duplex == FULL_DUPLEX)
 		ifmr->ifm_active |= IFM_FDX;
 	else
@@ -1075,16 +1070,16 @@ igc_if_media_change(if_ctx_t ctx)
 		adapter->hw.phy.autoneg_advertised = ADVERTISE_1000_FULL;
 		break;
 	case IFM_100_TX:
-		if ((ifm->ifm_media & IFM_GMASK) == IFM_FDX)
-			adapter->hw.phy.autoneg_advertised = ADVERTISE_100_FULL;
-		else
+		if ((ifm->ifm_media & IFM_GMASK) == IFM_HDX)
 			adapter->hw.phy.autoneg_advertised = ADVERTISE_100_HALF;
+		else
+			adapter->hw.phy.autoneg_advertised = ADVERTISE_100_FULL;
 		break;
 	case IFM_10_T:
-		if ((ifm->ifm_media & IFM_GMASK) == IFM_FDX)
-			adapter->hw.phy.autoneg_advertised = ADVERTISE_10_FULL;
-		else
+		if ((ifm->ifm_media & IFM_GMASK) == IFM_HDX)
 			adapter->hw.phy.autoneg_advertised = ADVERTISE_10_HALF;
+		else
+			adapter->hw.phy.autoneg_advertised = ADVERTISE_10_FULL;
 		break;
 	default:
 		device_printf(adapter->dev, "Unsupported media type\n");
@@ -1099,11 +1094,21 @@ static int
 igc_if_set_promisc(if_ctx_t ctx, int flags)
 {
 	struct igc_adapter *adapter = iflib_get_softc(ctx);
+	struct ifnet *ifp = iflib_get_ifp(ctx);
 	u32 reg_rctl;
-
-	igc_disable_promisc(ctx);
+	int mcnt = 0;
 
 	reg_rctl = IGC_READ_REG(&adapter->hw, IGC_RCTL);
+	reg_rctl &= ~(IGC_RCTL_SBP | IGC_RCTL_UPE);
+	if (flags & IFF_ALLMULTI)
+		mcnt = MAX_NUM_MULTICAST_ADDRESSES;
+	else
+		mcnt = if_multiaddr_count(ifp, MAX_NUM_MULTICAST_ADDRESSES);
+
+	/* Don't disable if in MAX groups */
+	if (mcnt < MAX_NUM_MULTICAST_ADDRESSES)
+		reg_rctl &=  (~IGC_RCTL_MPE);
+	IGC_WRITE_REG(&adapter->hw, IGC_RCTL, reg_rctl);
 
 	if (flags & IFF_PROMISC) {
 		reg_rctl |= (IGC_RCTL_UPE | IGC_RCTL_MPE);
@@ -1119,25 +1124,17 @@ igc_if_set_promisc(if_ctx_t ctx, int flags)
 	return (0);
 }
 
-static void
-igc_disable_promisc(if_ctx_t ctx)
+static u_int
+igc_copy_maddr(void *arg, struct sockaddr_dl *sdl, u_int idx)
 {
-	struct igc_adapter *adapter = iflib_get_softc(ctx);
-	struct ifnet *ifp = iflib_get_ifp(ctx);
-	u32 reg_rctl;
-	int mcnt = 0;
+	u8 *mta = arg;
 
-	reg_rctl = IGC_READ_REG(&adapter->hw, IGC_RCTL);
-	reg_rctl &= (~IGC_RCTL_UPE);
-	if (if_getflags(ifp) & IFF_ALLMULTI)
-		mcnt = MAX_NUM_MULTICAST_ADDRESSES;
-	else
-		mcnt = if_multiaddr_count(ifp, MAX_NUM_MULTICAST_ADDRESSES);
-	/* Don't disable if in MAX groups */
-	if (mcnt < MAX_NUM_MULTICAST_ADDRESSES)
-		reg_rctl &=  (~IGC_RCTL_MPE);
-	reg_rctl &=  (~IGC_RCTL_SBP);
-	IGC_WRITE_REG(&adapter->hw, IGC_RCTL, reg_rctl);
+	if (idx == MAX_NUM_MULTICAST_ADDRESSES)
+		return (0);
+
+	bcopy(LLADDR(sdl), &mta[idx * ETHER_ADDR_LEN], ETHER_ADDR_LEN);
+
+	return (1);
 }
 
 /*********************************************************************
@@ -1152,8 +1149,8 @@ igc_if_multi_set(if_ctx_t ctx)
 {
 	struct igc_adapter *adapter = iflib_get_softc(ctx);
 	struct ifnet *ifp = iflib_get_ifp(ctx);
-	u32 reg_rctl = 0;
 	u8  *mta; /* Multicast array memory */
+	u32 reg_rctl = 0;
 	int mcnt = 0;
 
 	IOCTL_DEBUGOUT("igc_set_multi: begin");
@@ -1161,13 +1158,25 @@ igc_if_multi_set(if_ctx_t ctx)
 	mta = adapter->mta;
 	bzero(mta, sizeof(u8) * ETHER_ADDR_LEN * MAX_NUM_MULTICAST_ADDRESSES);
 
-	if_multiaddr_array(ifp, mta, &mcnt, MAX_NUM_MULTICAST_ADDRESSES);
+	mcnt = if_foreach_llmaddr(ifp, igc_copy_maddr, mta);
 
-	if (mcnt >= MAX_NUM_MULTICAST_ADDRESSES) {
-		reg_rctl = IGC_READ_REG(&adapter->hw, IGC_RCTL);
-		reg_rctl |= IGC_RCTL_MPE;
-		IGC_WRITE_REG(&adapter->hw, IGC_RCTL, reg_rctl);
-	} else
+	reg_rctl = IGC_READ_REG(&adapter->hw, IGC_RCTL);
+
+	if (if_getflags(ifp) & IFF_PROMISC) {
+		reg_rctl |= (IGC_RCTL_UPE | IGC_RCTL_MPE);
+		/* Turn this on if you want to see bad packets */
+		if (igc_debug_sbp)
+			reg_rctl |= IGC_RCTL_SBP;
+	} else if (mcnt >= MAX_NUM_MULTICAST_ADDRESSES ||
+	      if_getflags(ifp) & IFF_ALLMULTI) {
+                reg_rctl |= IGC_RCTL_MPE;
+		reg_rctl &= ~IGC_RCTL_UPE;
+        } else
+		reg_rctl = ~(IGC_RCTL_UPE | IGC_RCTL_MPE);
+
+	IGC_WRITE_REG(&adapter->hw, IGC_RCTL, reg_rctl);
+
+	if (mcnt < MAX_NUM_MULTICAST_ADDRESSES)
 		igc_update_mc_addr_list(&adapter->hw, mta, mcnt);
 }
 
@@ -1201,12 +1210,12 @@ igc_if_update_admin_status(if_ctx_t ctx)
 	/* Get the cached link value or read phy for real */
 	switch (hw->phy.media_type) {
 	case igc_media_type_copper:
-		if (hw->mac.get_link_status) {
+		if (hw->mac.get_link_status == true) {
 			/* Do the work to read phy */
 			igc_check_for_link(hw);
 			link_check = !hw->mac.get_link_status;
 		} else
-			link_check = TRUE;
+			link_check = true;
 		break;
 	case igc_media_type_unknown:
 		igc_check_for_link(hw);
@@ -1533,7 +1542,6 @@ igc_init_dmac(struct igc_adapter *adapter, u32 pba)
 		& IGC_FCRTC_RTH_COAL_MASK);
 	IGC_WRITE_REG(hw, IGC_FCRTC, reg);
 
-	
 	dmac = pba - max_frame_size / 512;
 	if (dmac < pba - 10)
 		dmac = pba - 10;
@@ -1644,25 +1652,18 @@ igc_reset(if_ctx_t ctx)
 
 	hw->fc.pause_time = IGC_FC_PAUSE_TIME;
 
-	hw->fc.send_xon = TRUE;
+	hw->fc.send_xon = true;
 
 	/* Issue a global reset */
 	igc_reset_hw(hw);
 	IGC_WRITE_REG(hw, IGC_WUC, 0);
-
-	/* Reset for AutoMediaDetect */
-	if (adapter->flags & IGC_MEDIA_RESET) {
-		igc_setup_init_funcs(hw, TRUE);
-		igc_get_bus_info(hw);
-		adapter->flags &= ~IGC_MEDIA_RESET;
-	}
 
 	/* and a re-init */
 	if (igc_init_hw(hw) < 0) {
 		device_printf(dev, "Hardware Initialization Failed\n");
 		return;
 	}
-	
+
 	/* Setup DMA Coalescing */
 	igc_init_dmac(adapter, pba);
 
@@ -2099,7 +2100,7 @@ igc_initialize_receive_unit(if_ctx_t ctx)
 		struct rx_ring *rxr = &que->rxr;
 		u64 bus_addr = rxr->rx_paddr;
 		u32 rxdctl;
-		
+
 #ifdef notyet
 		/* Configure for header split? -- ignore for now */
 		rxr->hdr_split = igc_header_split;
@@ -2125,7 +2126,7 @@ igc_initialize_receive_unit(if_ctx_t ctx)
 		rxdctl |= IGC_RX_HTHRESH << 8;
 		rxdctl |= IGC_RX_WTHRESH << 16;
 		IGC_WRITE_REG(hw, IGC_RXDCTL(i), rxdctl);
-	}		
+	}
 
 	/* Make sure VLAN Filters are off */
 	rctl &= ~IGC_RCTL_VFE;
@@ -2257,9 +2258,6 @@ igc_release_hw_control(struct igc_adapter *adapter)
 {
 	u32 ctrl_ext;
 
-	if (!adapter->has_manage)
-		return;
-
 	ctrl_ext = IGC_READ_REG(&adapter->hw, IGC_CTRL_EXT);
 	IGC_WRITE_REG(&adapter->hw, IGC_CTRL_EXT,
 	    ctrl_ext & ~IGC_CTRL_EXT_DRV_LOAD);
@@ -2272,10 +2270,10 @@ igc_is_valid_ether_addr(u8 *addr)
 	char zero_addr[6] = { 0, 0, 0, 0, 0, 0 };
 
 	if ((addr[0] & 1) || (!bcmp(addr, zero_addr, ETHER_ADDR_LEN))) {
-		return (FALSE);
+		return (false);
 	}
 
-	return (TRUE);
+	return (true);
 }
 
 /*
@@ -2290,7 +2288,6 @@ igc_get_wakeup(if_ctx_t ctx)
 	u16 eeprom_data = 0, apme_mask;
 
 	apme_mask = IGC_WUC_APME;
-	adapter->has_amt = TRUE;
 	eeprom_data = IGC_READ_REG(&adapter->hw, IGC_WUC);
 
 	if (eeprom_data & apme_mask)
@@ -2894,12 +2891,11 @@ igc_sysctl_eee(SYSCTL_HANDLER_ARGS)
 	struct igc_adapter *adapter = (struct igc_adapter *) arg1;
 	int error, value;
 
-	//value = adapter->hw.dev_spec.ich8lan.eee_disable;
 	value = adapter->hw.dev_spec._i225.eee_disable;
 	error = sysctl_handle_int(oidp, &value, 0, req);
 	if (error || req->newptr == NULL)
 		return (error);
-	//adapter->hw.dev_spec.ich8lan.eee_disable = (value != 0);
+
 	adapter->hw.dev_spec._i225.eee_disable = (value != 0);
 	igc_if_init(adapter->ctx);
 

@@ -1,36 +1,10 @@
-/******************************************************************************
-  SPDX-License-Identifier: BSD-3-Clause
-
-  Copyright (c) 2020 Rubicon Communications, LLC (Netgate)
-  All rights reserved.
-  
-  Redistribution and use in source and binary forms, with or without 
-  modification, are permitted provided that the following conditions are met:
-  
-   1. Redistributions of source code must retain the above copyright notice, 
-      this list of conditions and the following disclaimer.
-  
-   2. Redistributions in binary form must reproduce the above copyright 
-      notice, this list of conditions and the following disclaimer in the 
-      documentation and/or other materials provided with the distribution.
-  
-   3. Neither the name of Rubicon Communications nor the names of its
-      contributors may be used to endorse or promote products derived from 
-      this software without specific prior written permission.
-  
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-  POSSIBILITY OF SUCH DAMAGE.
-
-******************************************************************************/
+/*-
+ * Copyright 2021 Intel Corp
+ * Copyright 2021 Rubicon Communications, LLC (Netgate)
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * $FreeBSD$
+ */
 
 #ifndef _IGC_HW_H_
 #define _IGC_HW_H_
@@ -48,6 +22,7 @@ struct igc_hw;
 #define IGC_DEV_ID_I220_V			0x15F7
 #define IGC_DEV_ID_I225_K2			0x3101
 #define IGC_DEV_ID_I225_LMVP			0x5502
+#define IGC_DEV_ID_I226_K			0x5504
 #define IGC_DEV_ID_I225_IT			0x0D9F
 #define IGC_DEV_ID_I226_LM			0x125B
 #define IGC_DEV_ID_I226_V			0x125C
@@ -86,23 +61,9 @@ enum igc_nvm_type {
 	igc_nvm_invm,
 };
 
-enum igc_nvm_override {
-	igc_nvm_override_none = 0,
-	igc_nvm_override_spi_small,
-	igc_nvm_override_spi_large,
-	igc_nvm_override_microwire_small,
-	igc_nvm_override_microwire_large
-};
-
 enum igc_phy_type {
 	igc_phy_unknown = 0,
 	igc_phy_none,
-	igc_phy_m88,
-	igc_phy_igp,
-	igc_phy_igp_2,
-	igc_phy_gg82563,
-	igc_phy_igp_3,
-	igc_phy_ife,
 	igc_phy_i225,
 };
 
@@ -137,18 +98,6 @@ enum igc_bus_width {
 	igc_bus_width_reserved
 };
 
-enum igc_1000t_rx_status {
-	igc_1000t_rx_status_not_ok = 0,
-	igc_1000t_rx_status_ok,
-	igc_1000t_rx_status_undefined = 0xFF
-};
-
-enum igc_rev_polarity {
-	igc_rev_polarity_normal = 0,
-	igc_rev_polarity_reversed,
-	igc_rev_polarity_undefined = 0xFF
-};
-
 enum igc_fc_mode {
 	igc_fc_none = 0,
 	igc_fc_rx_pause,
@@ -168,22 +117,6 @@ enum igc_smart_speed {
 	igc_smart_speed_default = 0,
 	igc_smart_speed_on,
 	igc_smart_speed_off
-};
-
-enum igc_serdes_link_state {
-	igc_serdes_link_down = 0,
-	igc_serdes_link_autoneg_progress,
-	igc_serdes_link_autoneg_complete,
-	igc_serdes_link_forced_up
-};
-
-enum igc_invm_structure_type {
-	igc_invm_unitialized_structure		= 0x00,
-	igc_invm_word_autoload_structure		= 0x01,
-	igc_invm_csr_autoload_structure		= 0x02,
-	igc_invm_phy_register_autoload_structure	= 0x03,
-	igc_invm_rsa_key_sha256_structure		= 0x04,
-	igc_invm_invalidated_structure		= 0x0f,
 };
 
 #define __le16 u16
@@ -404,100 +337,19 @@ struct igc_hw_stats {
 	u64 b2ogprc;
 };
 
-struct igc_vf_stats {
-	u64 base_gprc;
-	u64 base_gptc;
-	u64 base_gorc;
-	u64 base_gotc;
-	u64 base_mprc;
-	u64 base_gotlbc;
-	u64 base_gptlbc;
-	u64 base_gorlbc;
-	u64 base_gprlbc;
-
-	u32 last_gprc;
-	u32 last_gptc;
-	u32 last_gorc;
-	u32 last_gotc;
-	u32 last_mprc;
-	u32 last_gotlbc;
-	u32 last_gptlbc;
-	u32 last_gorlbc;
-	u32 last_gprlbc;
-
-	u64 gprc;
-	u64 gptc;
-	u64 gorc;
-	u64 gotc;
-	u64 mprc;
-	u64 gotlbc;
-	u64 gptlbc;
-	u64 gorlbc;
-	u64 gprlbc;
-};
-
-struct igc_phy_stats {
-	u32 idle_errors;
-	u32 receive_errors;
-};
-
-struct igc_host_mng_dhcp_cookie {
-	u32 signature;
-	u8  status;
-	u8  reserved0;
-	u16 vlan_id;
-	u32 reserved1;
-	u16 reserved2;
-	u8  reserved3;
-	u8  checksum;
-};
-
-/* Host Interface "Rev 1" */
-struct igc_host_command_header {
-	u8 command_id;
-	u8 command_length;
-	u8 command_options;
-	u8 checksum;
-};
-
-#define IGC_HI_MAX_DATA_LENGTH	252
-struct igc_host_command_info {
-	struct igc_host_command_header command_header;
-	u8 command_data[IGC_HI_MAX_DATA_LENGTH];
-};
-
-/* Host Interface "Rev 2" */
-struct igc_host_mng_command_header {
-	u8  command_id;
-	u8  checksum;
-	u16 reserved1;
-	u16 reserved2;
-	u16 command_length;
-};
-
-#define IGC_HI_MAX_MNG_DATA_LENGTH	0x6F8
-struct igc_host_mng_command_info {
-	struct igc_host_mng_command_header command_header;
-	u8 command_data[IGC_HI_MAX_MNG_DATA_LENGTH];
-};
-
 #include "igc_mac.h"
 #include "igc_phy.h"
 #include "igc_nvm.h"
-#include "igc_manage.h"
 
 /* Function pointers for the MAC. */
 struct igc_mac_operations {
 	s32  (*init_params)(struct igc_hw *);
-	bool (*check_mng_mode)(struct igc_hw *);
 	s32  (*check_for_link)(struct igc_hw *);
 	void (*clear_hw_cntrs)(struct igc_hw *);
 	void (*clear_vfta)(struct igc_hw *);
 	s32  (*get_bus_info)(struct igc_hw *);
 	void (*set_lan_id)(struct igc_hw *);
 	s32  (*get_link_up_info)(struct igc_hw *, u16 *, u16 *);
-	s32  (*led_on)(struct igc_hw *);
-	s32  (*led_off)(struct igc_hw *);
 	void (*update_mc_addr_list)(struct igc_hw *, u8 *, u32);
 	s32  (*reset_hw)(struct igc_hw *);
 	s32  (*init_hw)(struct igc_hw *);
@@ -593,16 +445,9 @@ struct igc_mac_info {
 
 	u8  forced_speed_duplex;
 
-	bool arc_subsystem_valid;
 	bool asf_firmware_present;
 	bool autoneg;
-	bool autoneg_failed;
 	bool get_link_status;
-	bool in_ifs_mode;
-	bool report_tx_early;
-	enum igc_serdes_link_state serdes_link_state;
-	bool serdes_has_link;
-	bool tx_pkt_filtering;
 	u32  max_frame_size;
 };
 
@@ -610,11 +455,6 @@ struct igc_phy_info {
 	struct igc_phy_operations ops;
 	enum igc_phy_type type;
 
-	enum igc_1000t_rx_status local_rx;
-	enum igc_1000t_rx_status remote_rx;
-	enum igc_ms_type ms_type;
-	enum igc_ms_type original_ms_type;
-	enum igc_rev_polarity cable_polarity;
 	enum igc_smart_speed smart_speed;
 
 	u32 addr;
@@ -626,14 +466,9 @@ struct igc_phy_info {
 
 	u16 autoneg_advertised;
 	u16 autoneg_mask;
-	u16 cable_length;
-	u16 max_cable_length;
-	u16 min_cable_length;
 
 	u8 mdix;
 
-	bool disable_polarity_correction;
-	bool is_mdix;
 	bool polarity_correction;
 	bool speed_downgraded;
 	bool autoneg_wait_to_complete;
@@ -642,7 +477,6 @@ struct igc_phy_info {
 struct igc_nvm_info {
 	struct igc_nvm_operations ops;
 	enum igc_nvm_type type;
-	enum igc_nvm_override override;
 
 	u16 word_size;
 	u16 delay_usec;
@@ -672,12 +506,8 @@ struct igc_fc_info {
 };
 
 struct igc_dev_spec_i225 {
-	bool global_device_reset;
 	bool eee_disable;
 	bool clear_semaphore_once;
-	bool module_plugged;
-	u8 media_port;
-	bool mas_capable;
 	u32 mtu;
 };
 
@@ -693,7 +523,6 @@ struct igc_hw {
 	struct igc_phy_info  phy;
 	struct igc_nvm_info  nvm;
 	struct igc_bus_info  bus;
-	struct igc_host_mng_dhcp_cookie mng_cookie;
 
 	union {
 		struct igc_dev_spec_i225 _i225;
