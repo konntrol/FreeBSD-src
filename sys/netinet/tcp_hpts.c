@@ -47,7 +47,7 @@
  *
  * tcp_hpts_insert(tp, HPTS_USEC_TO_SLOTS(550));
  *
- * The above would schedule tcp_ouput() to be called in 550 useconds.
+ * The above would schedule tcp_output() to be called in 550 useconds.
  * Note that if using this mechanism the stack will want to add near
  * its top a check to prevent unwanted calls (from user land or the
  * arrival of incoming ack's). So it would add something like:
@@ -1364,18 +1364,23 @@ again:
 			 * We also only call tfb_do_queued_segments() <or>
 			 * tcp_output().  It is expected that if segments are
 			 * queued and come in that the final input mbuf will
-			 * cause a call to output if it is needed.
+			 * cause a call to output if it is needed so we do
+			 * not need a second call to tcp_output(). So we do
+			 * one or the other but not both.
 			 */
 			tp->t_flags2 |= TF2_HPTS_CALLS;
 			if ((tp->t_flags2 & TF2_SUPPORTS_MBUFQ) &&
 			    !STAILQ_EMPTY(&tp->t_inqueue)) {
 				error = (*tp->t_fb->tfb_do_queued_segments)(tp, 0);
-				if (error) {
-					/* The input killed the connection */
+				/*
+				 * A non-zero return for input queue processing
+				 * is the lock is released and most likely the
+				 * inp is gone.
+				 */
+				if (error)
 					goto skip_pacing;
-				}
-			}
-			error = tcp_output(tp);
+			} else
+				error = tcp_output(tp);
 			if (error < 0)
 				goto skip_pacing;
 			INP_WUNLOCK(inp);
