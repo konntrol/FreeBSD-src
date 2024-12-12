@@ -98,6 +98,7 @@ CTASSERT(sizeof (struct ether_addr) == ETHER_ADDR_LEN);
 #endif
 
 VNET_DEFINE(pfil_head_t, link_pfil_head);	/* Packet filter hooks */
+VNET_DEFINE(pppoe_input_t *, pppoe_input_ptr);
 
 /* netgraph node hooks for ng_ether(4) */
 void	(*ng_ether_input_p)(struct ifnet *ifp, struct mbuf **mp);
@@ -588,16 +589,6 @@ ether_input_internal(struct ifnet *ifp, struct mbuf *m)
 	 */
 	ETHER_BPF_MTAP(ifp, m);
 
-	/*
-	 * If the CRC is still on the packet, trim it off. We do this once
-	 * and once only in case we are re-entered. Nothing else on the
-	 * Ethernet receive path expects to see the FCS.
-	 */
-	if (m->m_flags & M_HASFCS) {
-		m_adj(m, -ETHER_CRC_LEN);
-		m->m_flags &= ~M_HASFCS;
-	}
-
 	if (!(ifp->if_capenable & IFCAP_HWSTATS))
 		if_inc_counter(ifp, IFCOUNTER_IBYTES, m->m_pkthdr.len);
 
@@ -942,6 +933,13 @@ ether_demux(struct ifnet *ifp, struct mbuf *m)
 		isr = NETISR_IPV6;
 		break;
 #endif
+	case ETHERTYPE_PPPOEDISC:
+	case ETHERTYPE_PPPOE:
+		if (V_pppoe_input_ptr != NULL) {
+			V_pppoe_input_ptr(ether_type, m);
+			return;
+		}
+	/* fallthrough */
 	default:
 		goto discard;
 	}

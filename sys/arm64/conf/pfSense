@@ -13,12 +13,13 @@ nooptions	COMPAT_FREEBSD7	# Compatible with FreeBSD7
 options 	GEOM_MIRROR
 options 	GEOM_UZIP
 options 	GEOM_ELI
-options 	GEOM_BDE
 
 options 	TMPFS
 options 	UNIONFS
 options 	NULLFS
 options 	PPS_SYNC
+
+options 	KDTRACE_MIB_SDT
 
 # Required by athp
 options 	ALQ

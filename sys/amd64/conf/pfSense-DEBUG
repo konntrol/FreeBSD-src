@@ -14,11 +14,12 @@ nooptions	COMPAT_FREEBSD7	# Compatible with FreeBSD7
 options 	GEOM_MIRROR
 options 	GEOM_UZIP
 options 	GEOM_ELI
-options 	GEOM_BDE
 
 options 	TMPFS
 options 	NULLFS
 options 	PPS_SYNC
+
+options 	KDTRACE_MIB_SDT
 
 # Wireless
 nooptions	IEEE80211_DEBUG	# enable debug msgs
