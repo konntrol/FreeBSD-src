@@ -1231,6 +1231,7 @@ dmu_read_impl(dnode_t *dn, uint64_t offset, uint64_t size,
 			bufoff = offset - db->db_offset;
 			tocpy = MIN(db->db_size - bufoff, size);
 
+			ASSERT(db->db_data != NULL);
 			(void) memcpy(buf, (char *)db->db_data + bufoff, tocpy);
 
 			offset += tocpy;
@@ -1288,6 +1289,7 @@ dmu_write_impl(dmu_buf_t **dbp, int numbufs, uint64_t offset, uint64_t size,
 		else
 			dmu_buf_will_dirty(db, tx);
 
+		ASSERT(db->db_data != NULL);
 		(void) memcpy((char *)db->db_data + bufoff, buf, tocpy);
 
 		if (tocpy == db->db_size)
@@ -1436,6 +1438,7 @@ dmu_read_uio_dnode(dnode_t *dn, zfs_uio_t *uio, uint64_t size)
 		bufoff = zfs_uio_offset(uio) - db->db_offset;
 		tocpy = MIN(db->db_size - bufoff, size);
 
+		ASSERT(db->db_data != NULL);
 		err = zfs_uio_fault_move((char *)db->db_data + bufoff, tocpy,
 		    UIO_READ, uio);
 
@@ -1560,6 +1563,7 @@ top:
 		else
 			dmu_buf_will_dirty(db, tx);
 
+		ASSERT(db->db_data != NULL);
 		err = zfs_uio_fault_move((char *)db->db_data + bufoff,
 		    tocpy, UIO_WRITE, uio);
 
@@ -2957,10 +2961,8 @@ ZFS_MODULE_PARAM(zfs, zfs_, dmu_offset_next_sync, INT, ZMOD_RW,
 ZFS_MODULE_PARAM(zfs, zfs_, dmu_report_holes, INT, ZMOD_RW,
 	"Report holes to lseek et al");
 
-/* CSTYLED */
 ZFS_MODULE_PARAM(zfs, , dmu_prefetch_max, UINT, ZMOD_RW,
 	"Limit one prefetch call to this size");
 
-/* CSTYLED */
 ZFS_MODULE_PARAM(zfs, , dmu_ddt_copies, UINT, ZMOD_RW,
 	"Override copies= for dedup objects");

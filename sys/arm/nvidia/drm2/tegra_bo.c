@@ -29,6 +29,8 @@
 #include <sys/bus.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
+#include <sys/pctrie.h>
+#include <sys/vmem.h>
 
 #include <machine/bus.h>
 
@@ -39,8 +41,6 @@
 
 #include <arm/nvidia/drm2/tegra_drm.h>
 
-#include <sys/vmem.h>
-#include <sys/vmem.h>
 #include <vm/vm.h>
 #include <vm/vm_pageout.h>
 
@@ -64,7 +64,7 @@ tegra_bo_destruct(struct tegra_bo *bo)
 	for (i = 0; i < bo->npages; i++) {
 		m = vm_page_iter_lookup(&pages, i);
 		vm_page_busy_acquire(m, 0);
-		cdev_mgtdev_pager_free_page(&pages);
+		cdev_mgtdev_pager_free_page(&pages, m);
 		m->flags &= ~PG_FICTITIOUS;
 		vm_page_unwire_noq(m);
 		vm_page_free(m);

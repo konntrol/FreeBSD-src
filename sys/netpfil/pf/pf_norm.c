@@ -103,13 +103,6 @@ struct pf_fragment {
 	TAILQ_HEAD(pf_fragq, pf_frent) fr_queue;
 };
 
-struct pf_fragment_tag {
-	uint16_t	ft_hdrlen;	/* header length of reassembled pkt */
-	uint16_t	ft_extoff;	/* last extension header offset or 0 */
-	uint16_t	ft_maxlen;	/* maximum fragment payload length */
-	uint32_t	ft_id;		/* fragment id */
-};
-
 VNET_DEFINE_STATIC(struct mtx, pf_frag_mtx);
 #define V_pf_frag_mtx		VNET(pf_frag_mtx)
 #define PF_FRAG_LOCK()		mtx_lock(&V_pf_frag_mtx)
@@ -750,8 +743,12 @@ pf_reassemble(struct mbuf **m0, int dir, u_short *reason)
 	struct ip		*ip = mtod(m, struct ip *);
 	struct pf_frent		*frent;
 	struct pf_fragment	*frag;
+	struct m_tag		*mtag;
+	struct pf_fragment_tag	*ftag;
 	struct pf_fragment_cmp	key;
 	uint16_t		total, hdrlen;
+	uint32_t		 frag_id;
+	uint16_t		 maxlen;
 
 	/* Get an entry for the fragment queue */
 	if ((frent = pf_create_fragment(reason)) == NULL)
@@ -784,6 +781,8 @@ pf_reassemble(struct mbuf **m0, int dir, u_short *reason)
 		TAILQ_LAST(&frag->fr_queue, pf_fragq)->fe_len;
 	hdrlen = frent->fe_hdrlen;
 
+	maxlen = frag->fr_maxlen;
+	frag_id = frag->fr_id;
 	m = *m0 = pf_join_fragment(frag);
 	frag = NULL;
 
@@ -794,6 +793,19 @@ pf_reassemble(struct mbuf **m0, int dir, u_short *reason)
 		m = *m0;
 		m->m_pkthdr.len = plen;
 	}
+
+	if ((mtag = m_tag_get(PACKET_TAG_PF_REASSEMBLED,
+	    sizeof(struct pf_fragment_tag), M_NOWAIT)) == NULL) {
+		REASON_SET(reason, PFRES_SHORT);
+		/* PF_DROP requires a valid mbuf *m0 in pf_test() */
+		return (PF_DROP);
+	}
+	ftag = (struct pf_fragment_tag *)(mtag + 1);
+	ftag->ft_hdrlen = hdrlen;
+	ftag->ft_extoff = 0;
+	ftag->ft_maxlen = maxlen;
+	ftag->ft_id = frag_id;
+	m_tag_prepend(m, mtag);
 
 	ip = mtod(m, struct ip *);
 	ip->ip_sum = pf_cksum_fixup(ip->ip_sum, ip->ip_len,
@@ -1198,6 +1210,7 @@ pf_normalize_ip(struct mbuf **m0, u_short *reason,
 			return (PF_DROP);
 
 		h = mtod(pd->m, struct ip *);
+		pd->tot_len = htons(h->ip_len);
 
  no_fragment:
 		/* At this point, only IP_DF is allowed in ip_off */
@@ -1228,6 +1241,7 @@ pf_normalize_ip6(struct mbuf **m0, int off, u_short *reason,
     struct pf_pdesc *pd)
 {
 	struct pf_krule		*r;
+	struct ip6_hdr		*h;
 	struct ip6_frag		 frag;
 	bool			 scrub_compat;
 
@@ -1294,6 +1308,8 @@ pf_normalize_ip6(struct mbuf **m0, int off, u_short *reason,
 		pd->m = *m0;
 		if (pd->m == NULL)
 			return (PF_DROP);
+		h = mtod(pd->m, struct ip6_hdr *);
+		pd->tot_len = ntohs(h->ip6_plen) + sizeof(struct ip6_hdr);
 	}
 
 	return (PF_PASS);
@@ -1460,7 +1476,7 @@ pf_normalize_tcp_init(struct pf_pdesc *pd, struct tcphdr *th,
 	 * All normalizations below are only begun if we see the start of
 	 * the connections.  They must all set an enabled bit in pfss_flags
 	 */
-	if ((th->th_flags & TH_SYN) == 0)
+	if ((tcp_get_flags(th) & TH_SYN) == 0)
 		return (0);
 
 	if (th->th_off > (sizeof(struct tcphdr) >> 2) && src->scrub &&
@@ -1811,7 +1827,7 @@ pf_normalize_tcp_stateful(struct pf_pdesc *pd,
 			    dst->scrub->pfss_tsecr, dst->scrub->pfss_tsval0));
 			if (V_pf_status.debug >= PF_DEBUG_MISC) {
 				pf_print_state(state);
-				pf_print_flags(th->th_flags);
+				pf_print_flags(tcp_get_flags(th));
 				printf("\n");
 			}
 			REASON_SET(reason, PFRES_TS);
@@ -1820,9 +1836,9 @@ pf_normalize_tcp_stateful(struct pf_pdesc *pd,
 
 		/* XXX I'd really like to require tsecr but it's optional */
 
-	} else if (!got_ts && (th->th_flags & TH_RST) == 0 &&
+	} else if (!got_ts && (tcp_get_flags(th) & TH_RST) == 0 &&
 	    ((src->state == TCPS_ESTABLISHED && dst->state == TCPS_ESTABLISHED)
-	    || pd->p_len > 0 || (th->th_flags & TH_SYN)) &&
+	    || pd->p_len > 0 || (tcp_get_flags(th) & TH_SYN)) &&
 	    src->scrub && dst->scrub &&
 	    (src->scrub->pfss_flags & PFSS_PAWS) &&
 	    (dst->scrub->pfss_flags & PFSS_PAWS)) {
@@ -1861,7 +1877,7 @@ pf_normalize_tcp_stateful(struct pf_pdesc *pd,
 				DPFPRINTF(("Did not receive expected RFC1323 "
 				    "timestamp\n"));
 				pf_print_state(state);
-				pf_print_flags(th->th_flags);
+				pf_print_flags(tcp_get_flags(th));
 				printf("\n");
 			}
 			REASON_SET(reason, PFRES_TS);
@@ -1890,7 +1906,7 @@ pf_normalize_tcp_stateful(struct pf_pdesc *pd,
 				    "timestamp data packet. Disabled PAWS "
 				    "security.\n"));
 				pf_print_state(state);
-				pf_print_flags(th->th_flags);
+				pf_print_flags(tcp_get_flags(th));
 				printf("\n");
 			}
 		}
