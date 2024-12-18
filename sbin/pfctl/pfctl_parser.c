@@ -664,7 +664,7 @@ print_src_node(struct pfctl_src_node *sn, int opts)
 	print_addr(&aw, sn->af, opts & PF_OPT_VERBOSE2);
 	printf(" -> ");
 	aw.v.a.addr = sn->raddr;
-	print_addr(&aw, sn->naf ? sn->naf : sn->af, opts & PF_OPT_VERBOSE2);
+	print_addr(&aw, sn->af, opts & PF_OPT_VERBOSE2);
 	printf(" ( states %u, connections %u, rate %u.%u/%us )\n", sn->states,
 	    sn->conn, sn->conn_rate.count / 1000,
 	    (sn->conn_rate.count % 1000) / 100, sn->conn_rate.seconds);
@@ -836,7 +836,7 @@ print_rule(struct pfctl_rule *r, const char *anchor_call, int verbose, int numer
 	static const char *anchortypes[] = { "anchor", "anchor", "anchor",
 	    "anchor", "nat-anchor", "nat-anchor", "binat-anchor",
 	    "binat-anchor", "rdr-anchor", "rdr-anchor" };
-	int	i, ropts;
+	int	i, opts;
 	char	*p;
 
 	if (verbose)
@@ -1043,72 +1043,72 @@ print_rule(struct pfctl_rule *r, const char *anchor_call, int verbose, int numer
 		}
 		printf(" probability %s%%", buf);
 	}
-	ropts = 0;
+	opts = 0;
 	if (r->max_states || r->max_src_nodes || r->max_src_states)
-		ropts = 1;
+		opts = 1;
 	if (r->rule_flag & PFRULE_NOSYNC)
-		ropts = 1;
+		opts = 1;
 	if (r->rule_flag & PFRULE_SRCTRACK)
-		ropts = 1;
+		opts = 1;
 	if (r->rule_flag & PFRULE_IFBOUND)
-		ropts = 1;
+		opts = 1;
 	if (r->rule_flag & PFRULE_STATESLOPPY)
-		ropts = 1;
+		opts = 1;
 	if (r->rule_flag & PFRULE_PFLOW)
-		ropts = 1;
-	for (i = 0; !ropts && i < PFTM_MAX; ++i)
+		opts = 1;
+	for (i = 0; !opts && i < PFTM_MAX; ++i)
 		if (r->timeout[i])
-			ropts = 1;
-	if (ropts) {
+			opts = 1;
+	if (opts) {
 		printf(" (");
 		if (r->max_states) {
 			printf("max %u", r->max_states);
-			ropts = 0;
+			opts = 0;
 		}
 		if (r->rule_flag & PFRULE_NOSYNC) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("no-sync");
-			ropts = 0;
+			opts = 0;
 		}
 		if (r->rule_flag & PFRULE_SRCTRACK) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("source-track");
 			if (r->rule_flag & PFRULE_RULESRCTRACK)
 				printf(" rule");
 			else
 				printf(" global");
-			ropts = 0;
+			opts = 0;
 		}
 		if (r->max_src_states) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("max-src-states %u", r->max_src_states);
-			ropts = 0;
+			opts = 0;
 		}
 		if (r->max_src_conn) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("max-src-conn %u", r->max_src_conn);
-			ropts = 0;
+			opts = 0;
 		}
 		if (r->max_src_conn_rate.limit) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("max-src-conn-rate %u/%u",
 			    r->max_src_conn_rate.limit,
 			    r->max_src_conn_rate.seconds);
-			ropts = 0;
+			opts = 0;
 		}
 		if (r->max_src_nodes) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("max-src-nodes %u", r->max_src_nodes);
-			ropts = 0;
+			opts = 0;
 		}
 		if (r->overload_tblname[0]) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("overload <%s>", r->overload_tblname);
 			if (r->flush)
@@ -1117,30 +1117,30 @@ print_rule(struct pfctl_rule *r, const char *anchor_call, int verbose, int numer
 				printf(" global");
 		}
 		if (r->rule_flag & PFRULE_IFBOUND) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("if-bound");
-			ropts = 0;
+			opts = 0;
 		}
 		if (r->rule_flag & PFRULE_STATESLOPPY) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("sloppy");
-			ropts = 0;
+			opts = 0;
 		}
 		if (r->rule_flag & PFRULE_PFLOW) {
-			if (!ropts)
+			if (!opts)
 				printf(", ");
 			printf("pflow");
-			ropts = 0;
+			opts = 0;
 		}
 		for (i = 0; i < PFTM_MAX; ++i)
 			if (r->timeout[i]) {
 				int j;
 
-				if (!ropts)
+				if (!opts)
 					printf(", ");
-				ropts = 0;
+				opts = 0;
 				for (j = 0; pf_timeouts[j].name != NULL;
 				    ++j)
 					if (pf_timeouts[j].timeout == i)
@@ -1236,21 +1236,8 @@ print_rule(struct pfctl_rule *r, const char *anchor_call, int verbose, int numer
 		}
 #endif
 	}
-	if (!anchor_call[0] && ! TAILQ_EMPTY(&r->nat.list) &&
-	    r->naf != r->af) {
-		printf(" af-to %s from ", r->naf == AF_INET ? "inet" : "inet6");
-		print_pool(&r->nat, r->nat.proxy_port[0], r->nat.proxy_port[1],
-		    r->naf ? r->naf : r->af, PF_NAT);
-		if (r->rdr.cur != NULL && !TAILQ_EMPTY(&r->rdr.list)) {
-			printf(" to ");
-			print_pool(&r->rdr, r->rdr.proxy_port[0],
-			    r->rdr.proxy_port[1], r->naf ? r->naf : r->af,
-			    PF_RDR);
-		}
-	}
-	if (!anchor_call[0] &&
-	    (r->action == PF_NAT || r->action == PF_BINAT ||
-		r->action == PF_RDR)) {
+	if (!anchor_call[0] && (r->action == PF_NAT ||
+	    r->action == PF_BINAT || r->action == PF_RDR)) {
 		printf(" -> ");
 		print_pool(&r->rpool, r->rpool.proxy_port[0],
 		    r->rpool.proxy_port[1], r->af, r->action);
