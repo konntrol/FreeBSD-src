@@ -27,7 +27,6 @@ device		wlan_rssadapt
 device		wlan_xauth
 device		wlan_acl
 device		iwm
-device		iwmfw
 device		iwifw
 device		ipwfw		# Firmware for Intel PRO/Wireless 2100 IEEE 802.11 driver
 device		wpifw		# Firmware for Intel 3945ABG Wireless LAN IEEE 802.11 driver
