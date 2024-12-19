@@ -8844,9 +8844,6 @@ pf_route(struct mbuf **m, struct pf_krule *r, struct ifnet *oifp,
 
 		PF_STATE_UNLOCK(s);
 	}
-	/* If pfsync'd */
-	if (ifp == NULL && r->rpool.cur != NULL)
-		ifp = r->rpool.cur->kif ? r->rpool.cur->kif->pfik_ifp : NULL;
 
 	if (ifp == NULL) {
 		m0 = *m;
@@ -9172,9 +9169,6 @@ pf_route6(struct mbuf **m, struct pf_krule *r, struct ifnet *oifp,
 			m_copyback(m0, pd->off, sizeof(*uh), pd->hdr.any);
 		}
 	}
-
-	if (s)
-		PF_STATE_UNLOCK(s);
 
 	if (ifp == NULL) {
 		m0 = *m;
