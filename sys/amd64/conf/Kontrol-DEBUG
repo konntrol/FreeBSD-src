@@ -3,7 +3,7 @@ include		GENERIC
 nooptions	KDB_TRACE
 options 	DDB
 
-ident		Kontrol-DEBUG
+ident		pfSense-DEBUG
 
 nooptions	MAC		# TrustedBSD MAC Framework
 nooptions	COMPAT_FREEBSD4	# Compatible with FreeBSD4
@@ -19,13 +19,14 @@ options 	TMPFS
 options 	NULLFS
 options 	PPS_SYNC
 
+options 	KDTRACE_MIB_SDT
+
 # Wireless
 nooptions	IEEE80211_DEBUG	# enable debug msgs
 device		wlan_rssadapt
 device		wlan_xauth
 device		wlan_acl
 device		iwm
-device		iwmfw
 device		iwifw
 device		ipwfw		# Firmware for Intel PRO/Wireless 2100 IEEE 802.11 driver
 device		wpifw		# Firmware for Intel 3945ABG Wireless LAN IEEE 802.11 driver
