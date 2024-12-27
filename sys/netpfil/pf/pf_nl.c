@@ -175,7 +175,7 @@ dump_state(struct nlpcb *nlp, const struct nlmsghdr *hdr, struct pf_kstate *s,
 
 	nlattr_add_string(nw, PF_ST_IFNAME, s->kif->pfik_name);
 	nlattr_add_string(nw, PF_ST_ORIG_IFNAME, s->orig_kif->pfik_name);
-	dump_addr(nw, PF_ST_RT_ADDR, &s->rt_addr, af);
+	dump_addr(nw, PF_ST_RT_ADDR, &s->act.rt_addr, af);
 	nlattr_add_u32(nw, PF_ST_CREATION, time_uptime - (s->creation / 1000));
 	uint32_t expire = pf_state_expires(s);
 	if (expire > time_uptime)
@@ -207,9 +207,9 @@ dump_state(struct nlpcb *nlp, const struct nlmsghdr *hdr, struct pf_kstate *s,
 	nlattr_add_u16(nw, PF_ST_MAX_MSS, s->act.max_mss);
 	nlattr_add_u16(nw, PF_ST_DNPIPE, s->act.dnpipe);
 	nlattr_add_u16(nw, PF_ST_DNRPIPE, s->act.dnrpipe);
-	nlattr_add_u8(nw, PF_ST_RT, s->rt);
-	if (s->rt_kif != NULL)
-		nlattr_add_string(nw, PF_ST_RT_IFNAME, s->rt_kif->pfik_name);
+	nlattr_add_u8(nw, PF_ST_RT, s->act.rt);
+	if (s->act.rt_kif != NULL)
+		nlattr_add_string(nw, PF_ST_RT_IFNAME, s->act.rt_kif->pfik_name);
 
 	if (!dump_state_peer(nw, PF_ST_PEER_SRC, &s->src))
 		goto enomem;
@@ -680,7 +680,7 @@ static const struct nlattr_parser nla_p_rule[] = {
 	{ .type = PF_RT_TAGNAME, .off = _OUT(tagname), .arg = (void *)PF_TAG_NAME_SIZE, .cb = nlattr_get_chara },
 	{ .type = PF_RT_MATCH_TAGNAME, .off = _OUT(match_tagname), .arg = (void *)PF_TAG_NAME_SIZE, .cb = nlattr_get_chara },
 	{ .type = PF_RT_OVERLOAD_TBLNAME, .off = _OUT(overload_tblname), .arg = (void *)PF_TABLE_NAME_SIZE, .cb = nlattr_get_chara },
-	{ .type = PF_RT_RPOOL, .off = _OUT(rdr), .arg = &pool_parser, .cb = nlattr_get_nested },
+	{ .type = PF_RT_RPOOL_RDR, .off = _OUT(rdr), .arg = &pool_parser, .cb = nlattr_get_nested },
 	{ .type = PF_RT_OS_FINGERPRINT, .off = _OUT(os_fingerprint), .cb = nlattr_get_uint32 },
 	{ .type = PF_RT_RTABLEID, .off = _OUT(rtableid), .cb = nlattr_get_uint32 },
 	{ .type = PF_RT_TIMEOUT, .off = _OUT(timeout), .arg = &timeout_parser, .cb = nlattr_get_nested_timeouts },
@@ -734,7 +734,7 @@ static const struct nlattr_parser nla_p_rule[] = {
 	{ .type = PF_RT_DIVERT_PORT, .off = _OUT(divert.port), .cb = nlattr_get_uint16 },
 	{ .type = PF_RT_RCV_IFNAME, .off = _OUT(rcv_ifname), .arg = (void *)IFNAMSIZ, .cb = nlattr_get_chara },
 	{ .type = PF_RT_MAX_SRC_CONN, .off = _OUT(max_src_conn), .cb = nlattr_get_uint32 },
-	{ .type = PF_RT_NAT, .off = _OUT(nat), .arg = &pool_parser, .cb = nlattr_get_nested },
+	{ .type = PF_RT_RPOOL_NAT, .off = _OUT(nat), .arg = &pool_parser, .cb = nlattr_get_nested },
 	{ .type = PF_RT_NAF, .off = _OUT(naf), .cb = nlattr_get_uint8 },
 };
 NL_DECLARE_ATTR_PARSER(rule_parser, nla_p_rule);
@@ -919,8 +919,8 @@ pf_handle_getrule(struct nlmsghdr *hdr, struct nl_pstate *npt)
 	nlattr_add_string(nw, PF_RT_TAGNAME, rule->tagname);
 	nlattr_add_string(nw, PF_RT_MATCH_TAGNAME, rule->match_tagname);
 	nlattr_add_string(nw, PF_RT_OVERLOAD_TBLNAME, rule->overload_tblname);
-	nlattr_add_pool(nw, PF_RT_RPOOL, &rule->rdr);
-	nlattr_add_pool(nw, PF_RT_NAT, &rule->nat);
+	nlattr_add_pool(nw, PF_RT_RPOOL_RDR, &rule->rdr);
+	nlattr_add_pool(nw, PF_RT_RPOOL_NAT, &rule->nat);
 	nlattr_add_u32(nw, PF_RT_OS_FINGERPRINT, rule->os_fingerprint);
 	nlattr_add_u32(nw, PF_RT_RTABLEID, rule->rtableid);
 	nlattr_add_timeout(nw, PF_RT_TIMEOUT, rule->timeout);
@@ -2021,7 +2021,7 @@ pf_nl_register(void)
 	NL_VERIFY_PARSERS(all_parsers);
 
 	family_id = genl_register_family(PFNL_FAMILY_NAME, 0, 2, PFNL_CMD_MAX);
-	genl_register_cmds(PFNL_FAMILY_NAME, pf_cmds, NL_ARRAY_LEN(pf_cmds));
+	genl_register_cmds(PFNL_FAMILY_NAME, pf_cmds, nitems(pf_cmds));
 }
 
 void

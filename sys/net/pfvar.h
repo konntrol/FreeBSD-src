@@ -648,17 +648,20 @@ struct pf_kpool {
 };
 
 struct pf_rule_actions {
+	struct pf_addr	 rt_addr;
+	struct pfi_kkif	*rt_kif;
 	int32_t		 rtableid;
+	uint32_t	 flags;
 	uint16_t	 qid;
 	uint16_t	 pqid;
 	uint16_t	 max_mss;
+	uint16_t	 dnpipe;
+	uint16_t	 dnrpipe;	/* Reverse direction pipe */
 	uint8_t		 log;
 	uint8_t		 set_tos;
 	uint8_t		 min_ttl;
-	uint16_t	 dnpipe;
-	uint16_t	 dnrpipe;	/* Reverse direction pipe */
-	uint32_t	 flags;
 	uint8_t		 set_prio[2];
+	uint8_t		 rt;
 };
 
 union pf_keth_rule_ptr {
@@ -1096,12 +1099,10 @@ struct pf_kstate {
 	struct pf_krule		*rule;
 	struct pf_krule		*anchor;
 	struct pf_krule		*nat_rule;
-	struct pf_addr		 rt_addr;
 	struct pf_state_key	*key[2];	/* addresses stack and wire  */
 	struct pf_udp_mapping	*udp_mapping;
 	struct pfi_kkif		*kif;
 	struct pfi_kkif		*orig_kif;	/* The real kif, even if we're a floating state (i.e. if == V_pfi_all). */
-	struct pfi_kkif		*rt_kif;
 	struct pf_ksrc_node	*src_node;
 	struct pf_ksrc_node	*nat_src_node;
 	u_int64_t		 packets[2];
@@ -1111,7 +1112,6 @@ struct pf_kstate {
 	u_int32_t		 pfsync_time;
 	struct pf_rule_actions	 act;
 	u_int16_t		 tag;
-	u_int8_t		 rt;
 	u_int16_t		 if_index_in;
 	u_int16_t		 if_index_out;
 };
@@ -1629,7 +1629,6 @@ struct pf_pdesc {
 	u_int32_t	 badopts;	/* v4 options or v6 routing headers */
 
 	u_int16_t	*ip_sum;
-	u_int16_t	*proto_sum;
 	u_int16_t	 flags;		/* Let SCRUB trigger behavior in
 					 * state code. Easier than tags */
 #define PFDESC_TCP_NORM	0x0001		/* TCP shall be statefully scrubbed */
@@ -2356,13 +2355,16 @@ extern int			 pf_udp_mapping_insert(struct pf_udp_mapping
 				    *mapping);
 extern void			 pf_udp_mapping_release(struct pf_udp_mapping
 				    *mapping);
+uint32_t			 pf_hashsrc(struct pf_addr *, sa_family_t);
+extern bool			 pf_src_node_exists(struct pf_ksrc_node **,
+				    struct pf_srchash *);
 extern struct pf_ksrc_node	*pf_find_src_node(struct pf_addr *,
 				    struct pf_krule *, sa_family_t,
 				    struct pf_srchash **, bool);
 extern void			 pf_unlink_src_node(struct pf_ksrc_node *);
 extern u_int			 pf_free_src_nodes(struct pf_ksrc_node_list *);
 extern void			 pf_print_state(struct pf_kstate *);
-extern void			 pf_print_flags(u_int8_t);
+extern void			 pf_print_flags(uint16_t);
 extern int			 pf_addr_wrap_neq(struct pf_addr_wrap *,
 				    struct pf_addr_wrap *);
 extern u_int16_t		 pf_cksum_fixup(u_int16_t, u_int16_t, u_int16_t,
@@ -2662,12 +2664,12 @@ u_short			 pf_map_addr(u_int8_t, struct pf_krule *,
 u_short			 pf_map_addr_sn(u_int8_t, struct pf_krule *,
 			    struct pf_addr *, struct pf_addr *,
 			    struct pfi_kkif **nkif, struct pf_addr *,
-			    struct pf_kpool *, struct pf_ksrc_node **);
+			    struct pf_ksrc_node **, struct pf_srchash **,
+			    struct pf_kpool *);
 int			 pf_get_transaddr_af(struct pf_krule *,
-			    struct pf_pdesc *, struct pf_ksrc_node **);
+			    struct pf_pdesc *);
 u_short			 pf_get_translation(struct pf_pdesc *,
-			    int, struct pf_ksrc_node **,
-			    struct pf_state_key **, struct pf_state_key **,
+			    int, struct pf_state_key **, struct pf_state_key **,
 			    struct pf_kanchor_stackframe *, struct pf_krule **,
 			    struct pf_udp_mapping **udp_mapping);
 

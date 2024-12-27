@@ -80,12 +80,6 @@ static int amdiommu_enable = 0;
 static TAILQ_HEAD(, amdiommu_unit) amdiommu_units =
     TAILQ_HEAD_INITIALIZER(amdiommu_units);
 
-static u_int
-ivrs_info_to_unit_id(UINT32 info)
-{
-	return ((info & ACPI_IVHD_UNIT_ID_MASK) >> 8);
-}
-
 typedef bool (*amdiommu_itercc_t)(void *, void *);
 typedef bool (*amdiommu_iter40_t)(ACPI_IVRS_HARDWARE2 *, void *);
 typedef bool (*amdiommu_iter11_t)(ACPI_IVRS_HARDWARE2 *, void *);
@@ -176,7 +170,6 @@ ivrs_lookup_ivhd_0x40(ACPI_IVRS_HARDWARE2 *h2, void *arg)
 		return (false);
 
 	ildp->sc->unit_dom = h2->PciSegmentGroup;
-	ildp->sc->iommu.unit = ivrs_info_to_unit_id(h2->Info);
 	ildp->sc->efr = h2->EfrRegisterImage;
 	return (true);
 }
@@ -194,7 +187,6 @@ ivrs_lookup_ivhd_0x10(ACPI_IVRS_HARDWARE1 *h1, void *arg)
 		return (false);
 
 	ildp->sc->unit_dom = h1->PciSegmentGroup;
-	ildp->sc->iommu.unit = ivrs_info_to_unit_id(h1->Info);
 	return (true);
 }
 
@@ -224,9 +216,23 @@ amdiommu_create_dev_tbl(struct amdiommu_unit *sc)
 	u_int devtbl_sz, dom, i, reclaimno, segnum_log, segnum, seg_sz;
 	int error;
 
+	static const int devtab_base_regs[] = {
+		AMDIOMMU_DEVTAB_BASE,
+		AMDIOMMU_DEVTAB_S1_BASE,
+		AMDIOMMU_DEVTAB_S2_BASE,
+		AMDIOMMU_DEVTAB_S3_BASE,
+		AMDIOMMU_DEVTAB_S4_BASE,
+		AMDIOMMU_DEVTAB_S5_BASE,
+		AMDIOMMU_DEVTAB_S6_BASE,
+		AMDIOMMU_DEVTAB_S7_BASE
+	};
+
 	segnum_log = (sc->efr & AMDIOMMU_EFR_DEVTBLSEG_MASK) >>
 	    AMDIOMMU_EFR_DEVTBLSEG_SHIFT;
 	segnum = 1 << segnum_log;
+
+	KASSERT(segnum <= nitems(devtab_base_regs),
+	    ("%s: unsupported devtab segment count %u", __func__, segnum));
 
 	devtbl_sz = amdiommu_devtbl_sz(sc);
 	seg_sz = devtbl_sz / segnum;
@@ -248,7 +254,6 @@ amdiommu_create_dev_tbl(struct amdiommu_unit *sc)
 	for (i = 0; i < segnum; i++) {
 		vm_page_t m;
 		uint64_t rval;
-		u_int reg;
 
 		for (reclaimno = 0; reclaimno < 3; reclaimno++) {
 			VM_OBJECT_WLOCK(sc->devtbl_obj);
@@ -276,9 +281,7 @@ amdiommu_create_dev_tbl(struct amdiommu_unit *sc)
 			pmap_zero_page(m);
 			pmap_qenter(seg_vaddr, &m, 1);
 		}
-		reg = i == 0 ? AMDIOMMU_DEVTAB_BASE : AMDIOMMU_DEVTAB_S1_BASE +
-		    i - 1;
-		amdiommu_write8(sc, reg, rval);		
+		amdiommu_write8(sc, devtab_base_regs[i], rval);
 	}
 
 	return (0);
@@ -445,6 +448,7 @@ amdiommu_attach(device_t dev)
 	bool res;
 
 	sc = device_get_softc(dev);
+	sc->iommu.unit = device_get_unit(dev);
 	sc->iommu.dev = dev;
 
 	error = pci_find_cap(dev, PCIY_SECDEV, &sc->seccap_reg);

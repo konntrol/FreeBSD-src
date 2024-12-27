@@ -2827,8 +2827,18 @@ pfrule		: action dir logquick interface route af proto fromto
 					r.free_flags |= PFRULE_DN_IS_QUEUE;
 			}
 
-			if ($9.marker & FOM_AFTO)
+			if ($9.marker & FOM_AFTO) {
 				r.naf = $9.nat.af;
+
+				r.nat.opts = $9.nat.pool_opts.type;
+				r.nat.opts |= $9.nat.pool_opts.opts;
+
+				if ((r.nat.opts & PF_POOL_TYPEMASK) !=
+				    PF_POOL_ROUNDROBIN &&
+				    disallow_table($9.nat.rdr->host, "tables are only "
+				    "supported in round-robin pools"))
+					YYERROR;
+			}
 
 			expand_rule(&r, $4, $5.host, $9.nat.rdr ? $9.nat.rdr->host : NULL,
 			    $7, $8.src_os, $8.src.host, $8.src.port, $8.dst.host,
@@ -3066,11 +3076,11 @@ filter_opt	: USER uids {
 				err(1, "af-to: calloc");
 			filter_opts.nat.rdr->host = $4;
 			memcpy(&filter_opts.nat.pool_opts, &$5,
-			sizeof(filter_opts.nat.pool_opts));
+			    sizeof(filter_opts.nat.pool_opts));
 			filter_opts.rdr.rdr =
-			calloc(1, sizeof(struct redirection));
+			    calloc(1, sizeof(struct redirection));
 			bzero(&filter_opts.rdr.pool_opts,
-			sizeof(filter_opts.rdr.pool_opts));
+			    sizeof(filter_opts.rdr.pool_opts));
 			filter_opts.marker |= FOM_AFTO;
 		}
 		| AFTO af FROM redirspec pool_opts TO redirspec pool_opts {
@@ -3094,14 +3104,14 @@ filter_opt	: USER uids {
 				err(1, "af-to: calloc");
 			filter_opts.nat.rdr->host = $4;
 			memcpy(&filter_opts.nat.pool_opts, &$5,
-			sizeof(filter_opts.nat.pool_opts));
+			    sizeof(filter_opts.nat.pool_opts));
 			filter_opts.rdr.af = $2;
 			filter_opts.rdr.rdr = calloc(1, sizeof(struct redirection));
 			if (filter_opts.rdr.rdr == NULL)
 				err(1, "af-to: calloc");
 			filter_opts.rdr.rdr->host = $7;
 			memcpy(&filter_opts.nat.pool_opts, &$8,
-			sizeof(filter_opts.nat.pool_opts));
+			    sizeof(filter_opts.nat.pool_opts));
 			filter_opts.marker |= FOM_AFTO;
 		}
 		| filter_sets

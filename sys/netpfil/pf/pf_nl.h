@@ -200,7 +200,7 @@ enum pf_rule_type_t {
 	PF_RT_TAGNAME		= 8, /* string */
 	PF_RT_MATCH_TAGNAME	= 9, /* string */
 	PF_RT_OVERLOAD_TBLNAME	= 10, /* string */
-	PF_RT_RPOOL		= 11, /* nested, pf_rpool_type_t */
+	PF_RT_RPOOL_RDR		= 11, /* nested, pf_rpool_type_t */
 	PF_RT_OS_FINGERPRINT	= 12, /* u32 */
 	PF_RT_RTABLEID		= 13, /* u32 */
 	PF_RT_TIMEOUT		= 14, /* nested, pf_timeout_type_t */
@@ -264,7 +264,7 @@ enum pf_rule_type_t {
 	PF_RT_ANCHOR_CALL	= 72, /* string */
 	PF_RT_RCV_IFNAME	= 73, /* string */
 	PF_RT_MAX_SRC_CONN	= 74, /* u32 */
-	PF_RT_NAT		= 75, /* nested, pf_rpool_type_t */
+	PF_RT_RPOOL_NAT		= 75, /* nested, pf_rpool_type_t */
 	PF_RT_NAF		= 76, /* u8 */
 };
 
